@@ -68,8 +68,16 @@ extern "C" {
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
-#if (_MSC_VER >= 1900)
+#if defined(_MSC_VER) && (_MSC_VER >= 1900)
 #include <stdbool.h>
+#elif defined(__has_include)
+#if __has_include(<stdbool.h>)
+#include <stdbool.h>
+#else
+#define bool int
+#define false 0
+#define true 1
+#endif
 #else
 #define bool int
 #define false 0
