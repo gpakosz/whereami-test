@@ -258,7 +258,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 #endif
 
 #if !defined(WAI_STRINGIZE)
-#define WAI_STRINGIZE(s)
+#define WAI_STRINGIZE(s) WAI_STRINGIZE_(s)
 #define WAI_STRINGIZE_(s) #s
 #endif
 
