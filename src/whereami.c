@@ -331,9 +331,11 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
             char* p = begin + offset - 30; // minimum size of local file header
             while (p >= begin) // scan backwards
             {
-              if (*((uint32_t*)p) == 0x04034b50UL) // local file header signature found
+              const uint32_t signature = 0x04034b50UL;
+              if (memcmp(p, &signature, sizeof(signature)) == 0) // local file header signature found
               {
-                uint16_t length_ = *((uint16_t*)(p + 26));
+                uint16_t length_;
+                memcpy(&length_, p + 26, sizeof(length_));
 
                 if (length + 2 + length_ < (int)sizeof(buffer))
                 {
