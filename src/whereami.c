@@ -413,7 +413,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     if (_NSGetExecutablePath(path, &size) == -1)
     {
       path = (char*)WAI_MALLOC(size);
-      if (!_NSGetExecutablePath(path, &size))
+      if (!path || (_NSGetExecutablePath(path, &size) == -1))
         break;
     }
 
