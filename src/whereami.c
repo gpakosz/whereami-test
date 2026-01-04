@@ -549,7 +549,8 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     }
   }
 
-  fclose(self_exe);
+  if (self_exe)
+    fclose(self_exe);
 
   return ok ? length : -1;
 }
