@@ -17,6 +17,8 @@ static void load(void)
   if (length > 0)
   {
     path = (char*)malloc(length + 1);
+    if (!path)
+      abort();
     wai_getExecutablePath(path, length, &dirname_length);
     path[length] = '\0';
 
@@ -31,6 +33,8 @@ static void load(void)
   if (length > 0)
   {
     path = (char*)malloc(length + 1);
+    if (!path)
+      abort();
     wai_getModulePath(path, length, &dirname_length);
     path[length] = '\0';
 
