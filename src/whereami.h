@@ -32,7 +32,7 @@ extern "C" {
  * @param capacity destination buffer capacity
  * @param dirname_length optional recipient for the length of the dirname part
  *   of the path. Available only when `capacity` is large enough to retrieve the
- *   path.
+ *   path. Will be set to `-1` if no path separator can be found.
  *
  * @return the length of the executable path on success (without a terminal NUL
  * character), otherwise `-1`
@@ -54,7 +54,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length);
  * @param capacity destination buffer capacity
  * @param dirname_length optional recipient for the length of the dirname part
  *   of the path. Available only when `capacity` is large enough to retrieve the
- *   path.
+ *   path. Will be set to `-1` if no path separator can be found.
  *
  * @return the length of the module path on success (without a terminal NUL
  * character), otherwise `-1`

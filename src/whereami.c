@@ -159,6 +159,9 @@ static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, i
 WAI_NOINLINE WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 {
+  if (dirname_length)
+    *dirname_length = -1;
+
   return WAI_PREFIX(getModulePath_)(NULL, out, capacity, dirname_length);
 }
 
@@ -167,6 +170,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 {
   HMODULE module;
   int length = -1;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -214,6 +220,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   char* resolved = NULL;
   int length = -1;
   bool ok;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
   for (ok = false; !ok; ok = true)
   {
@@ -274,6 +283,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 {
   int length = -1;
   FILE* maps = NULL;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
   for (int r = 0; r < WAI_PROC_SELF_MAPS_RETRY; ++r)
   {
@@ -407,6 +419,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (dirname_length)
+    *dirname_length = -1;
+
   for (ok = false; !ok; ok = true)
   {
     uint32_t size = (uint32_t)sizeof(buffer1);
@@ -454,6 +469,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
   for(;;)
   {
@@ -515,6 +533,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (dirname_length)
+    *dirname_length = -1;
+
   for (ok = false; !ok; ok = true)
   {
     self_exe = fopen(WAI_PROC_SELF_EXE, "r");
@@ -561,6 +582,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
   for(;;)
   {
@@ -624,6 +648,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   char* resolved = NULL;
   int length = -1;
   bool ok;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
   for (ok = false; !ok; ok = true)
   {
@@ -729,6 +756,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (dirname_length)
+    *dirname_length = -1;
+
   for (ok = false; !ok; ok = true)
   {
 #if defined(__NetBSD__)
@@ -777,6 +807,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (dirname_length)
+    *dirname_length = -1;
 
   for(;;)
   {
