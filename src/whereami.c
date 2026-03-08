@@ -19,6 +19,9 @@ extern "C" {
 #undef _DARWIN_C_SOURCE
 #define _DARWIN_C_SOURCE
 #define _DARWIN_BETTER_REALPATH
+#elif defined(__sun)
+#undef __EXTENSIONS__
+#define __EXTENSIONS__
 #endif
 
 #if !defined(WAI_MALLOC) || !defined(WAI_FREE) || !defined(WAI_REALLOC)
@@ -236,7 +239,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   return length;
 }
 
-#elif defined(__linux__) || defined(__CYGWIN__) || defined(__sun) || defined(WAI_USE_PROC_SELF_EXE)
+#elif defined(__linux__) || defined(__CYGWIN__) || (defined(WAI_USE_PROC_SELF_EXE) && !defined(__sun))
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -253,11 +256,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 #include <stdbool.h>
 
 #if !defined(WAI_PROC_SELF_EXE)
-#if defined(__sun)
-#define WAI_PROC_SELF_EXE "/proc/self/path/a.out"
-#else
 #define WAI_PROC_SELF_EXE "/proc/self/exe"
-#endif
 #endif
 
 WAI_FUNCSPEC
@@ -306,11 +305,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 #endif
 
 #if !defined(WAI_PROC_SELF_MAPS)
-#if defined(__sun)
-#define WAI_PROC_SELF_MAPS "/proc/self/map"
-#else
 #define WAI_PROC_SELF_MAPS "/proc/self/maps"
-#endif
 #endif
 
 #if !defined(WAI_STRINGIZE)
@@ -449,6 +444,106 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 
     if (length != -1)
       break;
+  }
+
+  return length;
+}
+
+#elif defined(__sun)
+
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <dlfcn.h>
+
+#if !defined(WAI_PROC_SELF_EXE)
+#define WAI_PROC_SELF_EXE "/proc/self/path/a.out"
+#endif
+
+WAI_FUNCSPEC
+int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
+{
+  char buffer[PATH_MAX];
+  char* resolved = NULL;
+  int length = -1;
+  bool ok;
+
+  if (dirname_length)
+    *dirname_length = -1;
+
+  for (ok = false; !ok; ok = true)
+  {
+    resolved = realpath(WAI_PROC_SELF_EXE, buffer);
+    if (!resolved)
+      break;
+
+    length = (int)strlen(resolved);
+    if (length <= capacity)
+    {
+      memcpy(out, resolved, length);
+
+      if (dirname_length)
+      {
+        int i;
+
+        for (i = length - 1; i >= 0; --i)
+        {
+          if (out[i] == '/')
+          {
+            *dirname_length = i;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return ok ? length : -1;
+}
+
+WAI_NOINLINE WAI_FUNCSPEC
+int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
+{
+  char buffer[PATH_MAX];
+  char* resolved = NULL;
+  int length = -1;
+
+  if (dirname_length)
+    *dirname_length = -1;
+
+  for(;;)
+  {
+    Dl_info info;
+
+    if (dladdr(WAI_RETURN_ADDRESS(), &info))
+    {
+      resolved = realpath(info.dli_fname, buffer);
+      if (!resolved)
+        break;
+
+      length = (int)strlen(resolved);
+      if (length <= capacity)
+      {
+        memcpy(out, resolved, length);
+
+        if (dirname_length)
+        {
+          int i;
+
+          for (i = length - 1; i >= 0; --i)
+          {
+            if (out[i] == '/')
+            {
+              *dirname_length = i;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    break;
   }
 
   return length;
