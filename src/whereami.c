@@ -83,14 +83,18 @@ extern "C" {
 #define false 0
 #define true 1
 #endif
-
 #define WAI_DWORD_MAX (~(DWORD)0)
+
+// Maximum extended-length Windows path is 32767 characters, plus the terminal NUL
+// https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+#define WAI_WINDOWS_MAX_PATH 32768
 
 static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, int* dirname_length)
 {
   wchar_t buffer1[MAX_PATH];
   wchar_t buffer2[MAX_PATH];
-  wchar_t* path = NULL;
+  wchar_t* path1 = NULL;
+  wchar_t* path2 = NULL;
   int length = -1;
   bool ok;
 
@@ -108,32 +112,69 @@ static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, i
       DWORD size_ = size;
       do
       {
+        wchar_t* path1_;
+
         // prevent later integer overflow when size_ is large
         if (size_ > WAI_DWORD_MAX / (sizeof(wchar_t) * 2))
           break;
 
-        wchar_t* path_ = (wchar_t*)WAI_REALLOC(path, sizeof(wchar_t) * size_ * 2);
-        if (!path_)
+        path1_ = (wchar_t*)WAI_REALLOC(path1, sizeof(wchar_t) * size_ * 2);
+        if (!path1_)
           break;
         size_ *= 2;
-        path = path_;
-        size = GetModuleFileNameW(module, path, size_);
+        path1 = path1_;
+        size = GetModuleFileNameW(module, path1, size_);
       }
       while (size == size_);
 
-      if (size == size_)
+      if (size == 0 || size == size_)
         break;
     }
     else
-      path = buffer1;
+      path1 = buffer1;
 
-    if (!_wfullpath(buffer2, path, MAX_PATH))
-      break;
-    length_ = (int)wcslen(buffer2);
-    length__ = WideCharToMultiByte(CP_UTF8, 0, buffer2, length_ , out, capacity, NULL, NULL);
+    if (path1 != buffer1)
+    {
+      // + 1 so _wfullpath() has room for the NUL terminator
+      path2 = (wchar_t*)WAI_MALLOC(sizeof(wchar_t) * (size + 1));
+      if (!path2)
+        break;
+    }
+    else
+      path2 = buffer2;
+
+    if (!_wfullpath(path2, path1, path2 != buffer2 ? size + 1 : sizeof(buffer2) / sizeof(buffer2[0])))
+    {
+      wchar_t* result = NULL;
+      size_t size_ = (size_t)(size < MAX_PATH ? MAX_PATH : size);
+
+      // _wfullpath() also fails for reasons that growing the buffer can't cure
+      // stop at the Windows path limit instead of growing until the allocator gives up
+      while (!result && size_ < WAI_WINDOWS_MAX_PATH)
+      {
+        wchar_t* path2_;
+
+        size_ *= 2;
+        if (size_ > WAI_WINDOWS_MAX_PATH)
+          size_ = WAI_WINDOWS_MAX_PATH;
+
+        path2_ = (wchar_t*)WAI_REALLOC(path2 != buffer2 ? path2 : NULL, sizeof(wchar_t) * size_);
+        if (!path2_)
+          break;
+        path2 = path2_;
+
+        result = _wfullpath(path2, path1, size_);
+      }
+
+      if (!result)
+        break;
+    }
+
+    length_ = (int)wcslen(path2);
+    length__ = WideCharToMultiByte(CP_UTF8, 0, path2, length_ , out, capacity, NULL, NULL);
 
     if (length__ == 0)
-      length__ = WideCharToMultiByte(CP_UTF8, 0, buffer2, length_, NULL, 0, NULL, NULL);
+      length__ = WideCharToMultiByte(CP_UTF8, 0, path2, length_, NULL, 0, NULL, NULL);
     if (length__ == 0)
       break;
 
@@ -154,8 +195,10 @@ static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, i
     length = length__;
   }
 
-  if (path != buffer1)
-    WAI_FREE(path);
+  if (path1 != buffer1)
+    WAI_FREE(path1);
+  if (path2 != buffer2)
+    WAI_FREE(path2);
 
   return ok ? length : -1;
 }
