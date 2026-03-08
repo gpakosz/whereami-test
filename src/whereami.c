@@ -280,7 +280,6 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
-#include <stdbool.h>
 
 WAI_NOINLINE WAI_FUNCSPEC
 int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
@@ -309,11 +308,11 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
       if (!fgets(buffer, sizeof(buffer), maps))
         break;
 
-      if (sscanf(buffer, "%" SCNxPTR "-%" SCNxPTR " %s %" SCNx64 " %x:%x %u %" WAI_STRINGIZE(PATH_MAX) "[^\n]\n", &low, &high, perms, &offset, &major, &minor, &inode, path) == 8)
+      if (sscanf(buffer, "%" SCNxPTR "-%" SCNxPTR " %4s %" SCNx64 " %" SCNx32 ":%" SCNx32 " %" SCNu32 " %" WAI_STRINGIZE(PATH_MAX) "[^\n]\n", &low, &high, perms, &offset, &major, &minor, &inode, path) == 8)
       {
         void* _addr = WAI_RETURN_ADDRESS();
         uintptr_t addr = (uintptr_t)_addr;
-        if (low <= addr && addr <= high)
+        if (low <= addr && addr < high)
         {
           char* resolved;
 
@@ -324,12 +323,15 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
           length = (int)strlen(resolved);
 #if defined(__ANDROID__) || defined(ANDROID)
           if (length > 4
+              // `offset` is where the local file header search starts from
+              // below, it must leave room for one (`offset - 30`)
+              && offset >= 30
               &&buffer[length - 1] == 'k'
               &&buffer[length - 2] == 'p'
               &&buffer[length - 3] == 'a'
               &&buffer[length - 4] == '.')
           {
-            int fd = open(path, O_RDONLY);
+            int fd = open(resolved, O_RDONLY);
             if (fd == -1)
             {
               length = -1; // retry
@@ -350,14 +352,19 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
               const uint32_t signature = 0x04034b50UL;
               if (memcmp(p, &signature, sizeof(signature)) == 0) // local file header signature found
               {
-                uint16_t length_;
-                memcpy(&length_, p + 26, sizeof(length_));
-
-                if (length + 2 + length_ < (int)sizeof(buffer))
+                // ensure we can safely read the length field
+                if (p + 26 + sizeof(uint16_t) <= begin + offset)
                 {
-                  memcpy(&buffer[length], "!/", 2);
-                  memcpy(&buffer[length + 2], p + 30, length_);
-                  length += 2 + length_;
+                  uint16_t length_;
+                  memcpy(&length_, p + 26, sizeof(length_));
+
+                  // ensure we can safely read the filename
+                  if (p + 30 + length_ <= begin + offset && length + 2 + length_ < (int)sizeof(buffer))
+                  {
+                    memcpy(&buffer[length], "!/", 2);
+                    memcpy(&buffer[length + 2], p + 30, length_);
+                    length += 2 + length_;
+                  }
                 }
 
                 break;
