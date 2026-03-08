@@ -84,6 +84,8 @@ extern "C" {
 #define true 1
 #endif
 
+#define WAI_DWORD_MAX (~(DWORD)0)
+
 static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, int* dirname_length)
 {
   wchar_t buffer1[MAX_PATH];
@@ -106,9 +108,11 @@ static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, i
       DWORD size_ = size;
       do
       {
-        wchar_t* path_;
+        // prevent later integer overflow when size_ is large
+        if (size_ > WAI_DWORD_MAX / (sizeof(wchar_t) * 2))
+          break;
 
-        path_ = (wchar_t*)WAI_REALLOC(path, sizeof(wchar_t) * size_ * 2);
+        wchar_t* path_ = (wchar_t*)WAI_REALLOC(path, sizeof(wchar_t) * size_ * 2);
         if (!path_)
           break;
         size_ *= 2;
