@@ -82,9 +82,12 @@ int main(int argc, char** argv)
     path[length] = '\0';
 
     printf("executable path: %s\n", path);
-    path[dirname_length] = '\0';
-    printf("  dirname: %s\n", path);
-    printf("  basename: %s\n", path + dirname_length + 1);
+    if (dirname_length != -1)
+    {
+      path[dirname_length] = '\0';
+      printf("  dirname: %s\n", path);
+      printf("  basename: %s\n", path + dirname_length + 1);
+    }
     free(path);
   }
 
@@ -98,9 +101,12 @@ int main(int argc, char** argv)
     path[length] = '\0';
 
     printf("module path: %s\n", path);
-    path[dirname_length] = '\0';
-    printf("  dirname: %s\n", path);
-    printf("  basename: %s\n", path + dirname_length + 1);
+    if (dirname_length != -1)
+    {
+      path[dirname_length] = '\0';
+      printf("  dirname: %s\n", path);
+      printf("  basename: %s\n", path + dirname_length + 1);
+    }
     free(path);
   }
 
