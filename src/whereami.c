@@ -249,6 +249,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 #else
 #include <limits.h>
 #endif
+#if defined(__CYGWIN__)
+#include <unistd.h>
+#endif
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
@@ -263,6 +266,9 @@ WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 {
   char buffer[PATH_MAX];
+#if defined(__CYGWIN__)
+  char* with_exe = NULL;
+#endif
   char* resolved = NULL;
   int length = -1;
   bool ok;
@@ -277,6 +283,30 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
       break;
 
     length = (int)strlen(resolved);
+    #if defined(__CYGWIN__)
+    if (length + sizeof(".exe") <= sizeof(buffer))
+    {
+      memcpy(buffer + length, ".exe", sizeof(".exe"));
+      with_exe = buffer;
+    }
+    else
+    {
+      // the .exe probe is a refinement
+      with_exe = (char*)WAI_MALLOC(length + sizeof(".exe"));
+      if (with_exe)
+      {
+        memcpy(with_exe, buffer, length);
+        memcpy(with_exe + length, ".exe", sizeof(".exe"));
+      }
+    }
+
+    if (with_exe && access(with_exe, X_OK) == 0)
+    {
+      resolved = with_exe;
+      length += sizeof(".exe") - 1;
+    }
+    #endif
+
     if (length <= capacity)
     {
       memcpy(out, resolved, length);
@@ -296,6 +326,11 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
       }
     }
   }
+
+#if defined(__CYGWIN__)
+  if (with_exe != buffer)
+    WAI_FREE(with_exe);
+#endif
 
   return ok ? length : -1;
 }
