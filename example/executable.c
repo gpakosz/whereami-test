@@ -24,10 +24,10 @@ static void* dlopen(const char* fileName, int mode)
   if (MultiByteToWideChar(CP_UTF8, 0, fileName, -1, buffer, sizeof(buffer) / sizeof(*buffer)))
   {
     wchar_t buffer_[MAX_PATH];
+    DWORD length = GetFullPathNameW(buffer, sizeof(buffer_) / sizeof(*buffer_), buffer_, NULL);
 
-    GetFullPathNameW(buffer, sizeof(buffer_) / sizeof(*buffer_), buffer_, NULL);
-
-    return (void*)LoadLibraryW(buffer_);
+    if (length > 0 && length < sizeof(buffer_) / sizeof(*buffer_))
+      return (void*)LoadLibraryW(buffer_);
   }
 
   return NULL;
