@@ -365,6 +365,8 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 
   for (int r = 0; r < WAI_PROC_SELF_MAPS_RETRY; ++r)
   {
+    bool retry = false;
+
     maps = fopen(WAI_PROC_SELF_MAPS, "r");
     if (!maps)
       break;
@@ -389,6 +391,8 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
         {
           char* resolved;
 
+          // a path read from the maps file fails realpath() the same way on
+          // every pass, e.g. a " (deleted)" one, so don't retry it
           resolved = realpath(path, buffer);
           if (!resolved)
             break;
@@ -407,7 +411,8 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
             int fd = open(resolved, O_RDONLY);
             if (fd == -1)
             {
-              length = -1; // retry
+              length = -1;
+              retry = true;
               break;
             }
 
@@ -415,7 +420,8 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
             if (begin == MAP_FAILED)
             {
               close(fd);
-              length = -1; // retry
+              length = -1;
+              retry = true;
               break;
             }
 
@@ -477,7 +483,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
     fclose(maps);
     maps = NULL;
 
-    if (length != -1)
+    if (!retry)
       break;
   }
 
