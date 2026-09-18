@@ -854,6 +854,11 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     if (sysctl(mib, 4, argv, &size, NULL, 0) != 0)
         break;
 
+    // a process execve()'d with an empty argv has a NULL argv[0], and one
+    // execve()'d with { "", NULL } has an empty one - neither names a file
+    if (size < sizeof(char*) || !argv[0] || !argv[0][0])
+      break;
+
     if (strchr(argv[0], '/'))
     {
       resolved = realpath(argv[0], buffer2);
