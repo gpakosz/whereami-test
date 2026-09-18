@@ -825,10 +825,10 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 {
-  char buffer1[4096];
+  char* buffer1[4096 / sizeof(char*)];
   char buffer2[PATH_MAX];
   char buffer3[PATH_MAX];
-  char** argv = (char**)buffer1;
+  char** argv = buffer1;
   char* resolved = NULL;
   int length = -1;
   bool ok;
@@ -927,7 +927,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     }
   }
 
-  if (argv != (char**)buffer1)
+  if (argv != buffer1)
     WAI_FREE(argv);
 
   return ok ? length : -1;
