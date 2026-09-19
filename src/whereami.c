@@ -211,6 +211,9 @@ static int WAI_PREFIX(getModulePath_)(HMODULE module, char* out, int capacity, i
 WAI_NOINLINE WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 {
+  if (!out)
+    capacity = 0;
+
   if (dirname_length)
     *dirname_length = -1;
 
@@ -222,6 +225,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 {
   HMODULE module;
   int length = -1;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -274,6 +280,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   char* resolved = NULL;
   int length = -1;
   bool ok;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -361,6 +370,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 {
   int length = -1;
   FILE* maps = NULL;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -512,6 +524,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (!out)
+    capacity = 0;
+
   if (dirname_length)
     *dirname_length = -1;
 
@@ -551,6 +566,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -611,6 +629,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (!out)
+    capacity = 0;
+
   if (dirname_length)
     *dirname_length = -1;
 
@@ -661,6 +682,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -725,6 +749,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (!out)
+    capacity = 0;
+
   if (dirname_length)
     *dirname_length = -1;
 
@@ -774,6 +801,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -840,6 +870,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   char* resolved = NULL;
   int length = -1;
   bool ok;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
@@ -953,6 +986,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   int length = -1;
   bool ok;
 
+  if (!out)
+    capacity = 0;
+
   if (dirname_length)
     *dirname_length = -1;
 
@@ -1004,6 +1040,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   char buffer[PATH_MAX];
   char* resolved = NULL;
   int length = -1;
+
+  if (!out)
+    capacity = 0;
 
   if (dirname_length)
     *dirname_length = -1;
