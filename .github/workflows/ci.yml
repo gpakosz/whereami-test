@@ -212,12 +212,10 @@ jobs:
 
           $vcvars = Join-Path $vs "VC\Auxiliary\Build\vcvarsall.bat"
 
-          $arch = "${{ matrix.arch }}"
-
-          if ($arch -eq "x86") {
-            $arch = "amd64_x86"
-          } else {
-            $arch = "amd64"
+          $arch = switch ("${{ matrix.arch }}") {
+            "x86"   { "amd64_x86" }
+            "x64"   { "amd64" }
+            default { throw "unsupported architecture: $_" }
           }
 
           $script = Join-Path $env:RUNNER_TEMP "setup-msvc.cmd"
@@ -241,7 +239,7 @@ jobs:
               $value = $Matches[2]
 
               if ($name -notmatch '^(GITHUB_|RUNNER_|NODE_OPTIONS$)') {
-                "$name=$value" >> $env:GITHUB_ENV
+                Add-Content -Path $env:GITHUB_ENV -Value "$name=$value" -Encoding utf8
               }
             }
           }
