@@ -154,14 +154,14 @@ jobs:
       - name: Build (C)
         shell: cmd
         run: |
-          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src src\whereami.c example\executable.c /Fe:executable.exe
-          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src /LD src\whereami.c example\library.c /Fe:library.dll
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src src\whereami.c example\executable.c /Fe:executable.exe || exit /b 1
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src /LD src\whereami.c example\library.c /Fe:library.dll || exit /b 1
 
       - name: Build (C++)
         shell: cmd
         run: |
-          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP src\whereami.c example\executable.c /Fe:executable-cpp.exe
-          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP /LD src\whereami.c example\library.c /Fe:library-cpp.dll
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP src\whereami.c example\executable.c /Fe:executable-cpp.exe || exit /b 1
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP /LD src\whereami.c example\library.c /Fe:library-cpp.dll || exit /b 1
 
       - name: Run and validate (C)
         shell: pwsh
