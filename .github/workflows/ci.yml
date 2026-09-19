@@ -316,6 +316,64 @@ jobs:
             exit 1
           }
 
+      - name: Build whereami.c inside a larger translation unit
+        shell: pwsh
+        run: |
+          @'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          '@ | Set-Content amalgamation.c
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src amalgamation.c /Fe:amalgamation.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./amalgamation.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Build with the documented customization macros
+        shell: pwsh
+        run: |
+          # cl.exe /D cannot define a function-like macro, so the customization
+          # points go into the source the way a user would put them in a config
+          # header
+          @'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #define WAI_FUNCSPEC static
+          #define WAI_PREFIX(f) my_##f
+          #define WAI_MALLOC(size) my_malloc(size)
+          #define WAI_REALLOC(p, size) my_realloc(p, size)
+          #define WAI_FREE(p) my_free(p)
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          '@ | Set-Content customized.c
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src customized.c /Fe:customized.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./customized.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
   # ── Windows: MinGW (GCC + Clang via MSYS2) ──────────────────────────────────
 
   windows-mingw:
@@ -383,6 +441,55 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp\.exe$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+\\library-cpp\.dll$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dll$'
+
+      - name: Build whereami.c inside a larger translation unit
+        run: |
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe
+          ./amalgamation.exe
+
+      - name: Build with the documented customization macros
+        run: |
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #define WAI_FUNCSPEC static
+          #define WAI_PREFIX(f) my_##f
+          #define WAI_MALLOC(size) my_malloc(size)
+          #define WAI_REALLOC(p, size) my_realloc(p, size)
+          #define WAI_FREE(p) my_free(p)
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 customized.c -o customized.exe
+          ./customized.exe
 
   # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
 
