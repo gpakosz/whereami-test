@@ -99,24 +99,32 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
       - name: Run and validate (C++)
         run: |
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
   # ── Windows: MSVC (VS2022 + VS2026) ─────────────────────────────────────────
 
@@ -164,8 +172,16 @@ jobs:
             Write-Host "::error::executable path not found or incorrect in output"
             exit 1
           }
+          if ($output -notmatch '(?m)^  basename: executable\.exe\r?$') {
+            Write-Host "::error::basename not found or incorrect in output"
+            exit 1
+          }
           if ($output -notmatch '(?m)^module path: .+\\executable\.exe\r?$') {
             Write-Host "::error::module path not found or incorrect in output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^  basename: executable\.exe\r?$') {
+            Write-Host "::error::basename not found or incorrect in output"
             exit 1
           }
           Write-Host '───'
@@ -179,8 +195,16 @@ jobs:
             Write-Host "::error::executable path not found or incorrect in library output"
             exit 1
           }
+          if ($output -notmatch '(?m)^  basename: executable\.exe\r?$') {
+            Write-Host "::error::basename not found or incorrect in library output"
+            exit 1
+          }
           if ($output -notmatch '(?m)^module path: .+\\library\.dll\r?$') {
             Write-Host "::error::module path not found or incorrect in library output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^  basename: library\.dll\r?$') {
+            Write-Host "::error::basename not found or incorrect in library output"
             exit 1
           }
 
@@ -193,8 +217,16 @@ jobs:
             Write-Host "::error::executable path not found or incorrect in output"
             exit 1
           }
+          if ($output -notmatch '(?m)^  basename: executable-cpp\.exe\r?$') {
+            Write-Host "::error::basename not found or incorrect in output"
+            exit 1
+          }
           if ($output -notmatch '(?m)^module path: .+\\executable-cpp\.exe\r?$') {
             Write-Host "::error::module path not found or incorrect in output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^  basename: executable-cpp\.exe\r?$') {
+            Write-Host "::error::basename not found or incorrect in output"
             exit 1
           }
           Write-Host '───'
@@ -208,8 +240,16 @@ jobs:
             Write-Host "::error::executable path not found or incorrect in library output"
             exit 1
           }
+          if ($output -notmatch '(?m)^  basename: executable-cpp\.exe\r?$') {
+            Write-Host "::error::basename not found or incorrect in library output"
+            exit 1
+          }
           if ($output -notmatch '(?m)^module path: .+\\library-cpp\.dll\r?$') {
             Write-Host "::error::module path not found or incorrect in library output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^  basename: library-cpp\.dll\r?$') {
+            Write-Host "::error::basename not found or incorrect in library output"
             exit 1
           }
 
@@ -256,21 +296,29 @@ jobs:
         run: |
           output=$(./executable.exe | tee >(cat >&2))
           printf '%s\n' "$output" | grep -qE '^executable path: .+\\executable\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable\.exe$'
           printf '%s\n' "$output" | grep -qE '^module path: .+\\executable\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable\.exe$'
           echo '───'
           output=$(./executable.exe --load-library=./library.dll | tee >(cat >&2))
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+\\executable\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable\.exe$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+\\library\.dll$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.dll$'
 
       - name: Run and validate (C++)
         run: |
           output=$(./executable-cpp.exe | tee >(cat >&2))
           printf '%s\n' "$output" | grep -qE '^executable path: .+\\executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp\.exe$'
           printf '%s\n' "$output" | grep -qE '^module path: .+\\executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp\.exe$'
           echo '───'
           output=$(./executable-cpp.exe --load-library=./library-cpp.dll | tee >(cat >&2))
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+\\executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp\.exe$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+\\library-cpp\.dll$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dll$'
 
   # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
 
@@ -327,21 +375,29 @@ jobs:
         run: |
           output=$(./executable.exe | tee >(cat >&2))
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable\.exe$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable\.exe$'
           echo '───'
           output=$(./executable.exe --load-library=./library.dll | tee >(cat >&2))
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable\.exe$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.dll$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.dll$'
 
       - name: Run and validate (C++)
         run: |
           output=$(./executable-cpp.exe | tee >(cat >&2))
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp\.exe$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp\.exe$'
           echo '───'
           output=$(./executable-cpp.exe --load-library=./library-cpp.dll | tee >(cat >&2))
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp\.exe$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dll$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dll$'
 
   # ── macOS: Clang + GCC ──────────────────────────────────────────────────────
 
@@ -396,12 +452,16 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.dylib)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.dylib$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.dylib$'
 
       - name: Run and validate (C++)
         if: matrix.arch != 'x86'
@@ -409,12 +469,16 @@ jobs:
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.dylib)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dylib$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dylib$'
 
   # ── iOS ─────────────────────────────────────────────────────────────────────
 
@@ -543,12 +607,16 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
       - name: Run and validate (C++)
         shell: freebsd {0}
@@ -557,12 +625,16 @@ jobs:
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
   # ── OpenBSD ─────────────────────────────────────────────────────────────────
 
@@ -614,12 +686,16 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
       - name: Run and validate (C++)
         shell: openbsd {0}
@@ -628,12 +704,16 @@ jobs:
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
   # ── NetBSD ──────────────────────────────────────────────────────────────────
 
@@ -675,12 +755,16 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
       - name: Run and validate (C++)
         shell: netbsd {0}
@@ -689,12 +773,16 @@ jobs:
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
   # ── DragonFly BSD ───────────────────────────────────────────────────────────
 
@@ -736,12 +824,16 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
       - name: Run and validate (C++)
         shell: dragonflybsd {0}
@@ -750,12 +842,16 @@ jobs:
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
   # ── Solaris ─────────────────────────────────────────────────────────────────
 
@@ -799,12 +895,16 @@ jobs:
           output=$(./executable)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
           echo '───'
           output=$(./executable --load-library=./library.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
       - name: Run and validate (C++)
         shell: solaris {0}
@@ -814,9 +914,13 @@ jobs:
           output=$(./executable-cpp)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
           echo '───'
           output=$(./executable-cpp --load-library=./library-cpp.so)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
