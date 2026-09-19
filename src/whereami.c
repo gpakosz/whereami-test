@@ -397,6 +397,14 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
       if (!fgets(buffer, sizeof(buffer), maps))
         break;
 
+      // a line too long for the buffer arrives in pieces
+      // consume the rest and skip it
+      if (!strchr(buffer, '\n'))
+      {
+        while (fgets(buffer, sizeof(buffer), maps) && !strchr(buffer, '\n'));
+        continue;
+      }
+
       if (sscanf(buffer, "%" SCNxPTR "-%" SCNxPTR " %4s %" SCNx64 " %" SCNx32 ":%" SCNx32 " %" SCNu32 " %" WAI_STRINGIZE(PATH_MAX) "[^\n]\n", &low, &high, perms, &offset, &major, &minor, &inode, path) == 8)
       {
         void* _addr = WAI_RETURN_ADDRESS();
