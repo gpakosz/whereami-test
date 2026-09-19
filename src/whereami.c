@@ -446,13 +446,15 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
               if (memcmp(p, &signature, sizeof(signature)) == 0) // local file header signature found
               {
                 // ensure we can safely read the length field
-                if (p + 26 + sizeof(uint16_t) <= begin + offset)
+                // compare as sizes: `p + 26 + n` would be a pointer formed
+                // past the end of the mapping before the test rejects it
+                if ((size_t)((begin + offset) - p) >= 26 + sizeof(uint16_t))
                 {
                   uint16_t length_;
                   memcpy(&length_, p + 26, sizeof(length_));
 
                   // ensure we can safely read the filename
-                  if (p + 30 + length_ <= begin + offset && length + 2 + length_ < (int)sizeof(buffer))
+                  if ((size_t)((begin + offset) - p) >= (size_t)30 + length_ && length + 2 + length_ < (int)sizeof(buffer))
                   {
                     memcpy(&buffer[length], "!/", 2);
                     memcpy(&buffer[length + 2], p + 30, length_);
@@ -462,6 +464,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 
                 break;
               }
+
+              if (p == begin)
+                break;
 
               --p;
             }
