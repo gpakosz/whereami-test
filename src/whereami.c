@@ -876,6 +876,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 
 #if defined(__OpenBSD__)
 
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -889,6 +890,41 @@ static bool WAI_PREFIX(isExecutableFile_)(const char* path)
 WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 {
+#if OpenBSD >= 202610
+  char path[PATH_MAX];
+  int length;
+  int i;
+
+  if (!out)
+    capacity = 0;
+
+  if (dirname_length)
+    *dirname_length = -1;
+
+  if (getexecpath(path, sizeof(path)) == -1)
+    return -1;
+
+  length = (int)strlen(path);
+
+  if (length <= capacity)
+  {
+    memcpy(out, path, length);
+
+    if (dirname_length)
+    {
+      for (i = length - 1; i >= 0; --i)
+      {
+        if (out[i] == '/')
+        {
+          *dirname_length = i;
+          break;
+        }
+      }
+    }
+  }
+
+  return length;
+#else
   char* buffer1[4096 / sizeof(char*)];
   char buffer2[PATH_MAX];
   char buffer3[PATH_MAX];
@@ -1013,6 +1049,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     WAI_FREE(argv);
 
   return ok ? length : -1;
+#endif
 }
 
 #else
