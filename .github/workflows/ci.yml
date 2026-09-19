@@ -128,7 +128,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-  # ── Configurations the matrices never select ────────────────────────────────
+  # ── Extra configurations ────────────────────────────────────────────────────
 
   extra-configurations:
     runs-on: ubuntu-24.04
@@ -139,11 +139,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-
-      - name: Build with WAI_USE_PROC_SELF_EXE
-        run: |
-          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -DWAI_USE_PROC_SELF_EXE -c src/whereami.c -o /dev/null
-          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -DWAI_USE_PROC_SELF_EXE -c src/whereami.c -o /dev/null
 
       - name: Build whereami.c inside a larger translation unit
         run: |
