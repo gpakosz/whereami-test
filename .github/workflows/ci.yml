@@ -185,10 +185,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: windows-2022,        label: "2022", vsversion: "17.0", arch: x86 }
-          - { runner: windows-2022,        label: "2022", vsversion: "17.0", arch: x64 }
-          - { runner: windows-2025-vs2026, label: "2026", vsversion: "18.0", arch: x86 }
-          - { runner: windows-2025-vs2026, label: "2026", vsversion: "18.0", arch: x64 }
+          - { runner: windows-2022, label: "2022", vsversion: "17.0", arch: x86 }
+          - { runner: windows-2022, label: "2022", vsversion: "17.0", arch: x64 }
+          - { runner: windows-2025, label: "2026", vsversion: "18.0", arch: x86 }
+          - { runner: windows-2025, label: "2026", vsversion: "18.0", arch: x64 }
 
     name: Windows | MSVC ${{ matrix.label }} | ${{ matrix.arch }}
     steps:
