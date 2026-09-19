@@ -295,7 +295,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 
     length = (int)strlen(resolved);
     #if defined(__CYGWIN__)
-    if (length + sizeof(".exe") <= sizeof(buffer))
+    if ((size_t)length + sizeof(".exe") <= sizeof(buffer))
     {
       memcpy(buffer + length, ".exe", sizeof(".exe"));
       with_exe = buffer;
@@ -303,10 +303,10 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     else
     {
       // the .exe probe is a refinement
-      with_exe = (char*)WAI_MALLOC(length + sizeof(".exe"));
+      with_exe = (char*)WAI_MALLOC((size_t)length + sizeof(".exe"));
       if (with_exe)
       {
-        memcpy(with_exe, buffer, length);
+        memcpy(with_exe, buffer, (size_t)length);
         memcpy(with_exe + length, ".exe", sizeof(".exe"));
       }
     }
@@ -314,13 +314,13 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     if (with_exe && access(with_exe, X_OK) == 0)
     {
       resolved = with_exe;
-      length += sizeof(".exe") - 1;
+      length += (int)sizeof(".exe") - 1;
     }
     #endif
 
     if (length <= capacity)
     {
-      memcpy(out, resolved, length);
+      memcpy(out, resolved, (size_t)length);
 
       if (dirname_length)
       {
@@ -426,6 +426,9 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
               // `offset` is where the local file header search starts from
               // below, it must leave room for one (`offset - 30`)
               && offset >= 30
+              // the whole `offset` prefix gets mapped below, so it must fit in
+              // a size_t, which is narrower than uint64_t on 32-bit
+              && (uint64_t)(size_t)offset == offset
               &&buffer[length - 1] == 'k'
               &&buffer[length - 2] == 'p'
               &&buffer[length - 3] == 'a'
@@ -439,7 +442,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
               break;
             }
 
-            char* begin = (char*)mmap(0, offset, PROT_READ, MAP_SHARED, fd, 0);
+            char* begin = (char*)mmap(0, (size_t)offset, PROT_READ, MAP_SHARED, fd, 0);
             if (begin == MAP_FAILED)
             {
               close(fd);
@@ -480,13 +483,13 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
               --p;
             }
 
-            munmap(begin, offset);
+            munmap(begin, (size_t)offset);
             close(fd);
           }
 #endif
           if (length <= capacity)
           {
-            memcpy(out, resolved, length);
+            memcpy(out, resolved, (size_t)length);
 
             if (dirname_length)
             {
@@ -553,7 +556,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     length = (int)strlen(resolved);
     if (length <= capacity)
     {
-      memcpy(out, resolved, length);
+      memcpy(out, resolved, (size_t)length);
 
       if (dirname_length)
       {
@@ -600,7 +603,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
       length = (int)strlen(resolved);
       if (length <= capacity)
       {
-        memcpy(out, resolved, length);
+        memcpy(out, resolved, (size_t)length);
 
         if (dirname_length)
         {
@@ -666,7 +669,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     length = (int)strlen(resolved);
     if (length <= capacity)
     {
-      memcpy(out, resolved, length);
+      memcpy(out, resolved, (size_t)length);
 
       if (dirname_length)
       {
@@ -716,7 +719,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
       length = (int)strlen(resolved);
       if (length <= capacity)
       {
-        memcpy(out, resolved, length);
+        memcpy(out, resolved, (size_t)length);
 
         if (dirname_length)
         {
@@ -786,7 +789,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     length = (int)strlen(resolved);
     if (length <= capacity)
     {
-      memcpy(out, resolved, length);
+      memcpy(out, resolved, (size_t)length);
 
       if (dirname_length)
       {
@@ -836,7 +839,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
       length = (int)strlen(resolved);
       if (length <= capacity)
       {
-        memcpy(out, resolved, length);
+        memcpy(out, resolved, (size_t)length);
 
         if (dirname_length)
         {
@@ -957,11 +960,13 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
           if (*(end -1) == '/')
             --end;
 
-          if (((end - begin) + 1 + argv0_length + 1) <= sizeof(buffer2))
+          size_t prefix_length = (size_t)(end - begin);
+
+          if ((prefix_length + 1 + argv0_length + 1) <= sizeof(buffer2))
           {
-            memcpy(buffer2, begin, end - begin);
-            buffer2[end - begin] = '/';
-            memcpy(buffer2 + (end - begin) + 1, argv[0], argv0_length + 1);
+            memcpy(buffer2, begin, prefix_length);
+            buffer2[prefix_length] = '/';
+            memcpy(buffer2 + prefix_length + 1, argv[0], argv0_length + 1);
 
             // only consider files that are executable
             if (WAI_PREFIX(isExecutableFile_)(buffer2))
@@ -986,7 +991,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     length = (int)strlen(resolved);
     if (length <= capacity)
     {
-      memcpy(out, resolved, length);
+      memcpy(out, resolved, (size_t)length);
 
       if (dirname_length)
       {
@@ -1047,7 +1052,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     length = (int)strlen(resolved);
     if (length <= capacity)
     {
-      memcpy(out, resolved, length);
+      memcpy(out, resolved, (size_t)length);
 
       if (dirname_length)
       {
@@ -1096,7 +1101,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
       length = (int)strlen(resolved);
       if (length <= capacity)
       {
-        memcpy(out, resolved, length);
+        memcpy(out, resolved, (size_t)length);
 
         if (dirname_length)
         {

@@ -62,8 +62,8 @@ binsubdir := $(platform)-$(architecture)
 bindir := $(prefix)/bin/$(binsubdir)
 makefile := $(lastword $(MAKEFILE_LIST))
 
-override CFLAGS += -O2 -g -Wall -Wshadow -Wextra -pedantic -Werror -std=c99
-override CXXFLAGS += -O2 -g -Wall -Wshadow -Wextra -pedantic -Werror
+override CFLAGS += -O2 -g -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99
+override CXXFLAGS += -O2 -g -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror
 
 ifeq ($(shell printf "int main(int argc, char* argv[]) { return 0; }\n" | $(CC) -x c -o /dev/null -Wbad-function-cast -Werror - 2> /dev/null && echo 'ok'),ok)
   override CFLAGS += -Wbad-function-cast
