@@ -422,7 +422,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
               &&buffer[length - 3] == 'a'
               &&buffer[length - 4] == '.')
           {
-            int fd = open(resolved, O_RDONLY);
+            int fd = open(resolved, O_RDONLY | O_CLOEXEC);
             if (fd == -1)
             {
               length = -1;
