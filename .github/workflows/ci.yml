@@ -197,9 +197,54 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.arch }}
+      - name: Setup MSVC
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+          $vs = & $vswhere -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+
+          if (-not $vs) {
+            throw "Visual Studio not found"
+          }
+
+          $vcvars = Join-Path $vs "VC\Auxiliary\Build\vcvarsall.bat"
+
+          $arch = "${{ matrix.arch }}"
+
+          if ($arch -eq "x86") {
+            $arch = "amd64_x86"
+          } else {
+            $arch = "amd64"
+          }
+
+          $script = Join-Path $env:RUNNER_TEMP "setup-msvc.cmd"
+
+          @"
+          @echo off
+          call "$vcvars" $arch >nul
+          if errorlevel 1 exit /b 1
+          set
+          "@ | Set-Content $script
+
+          $variables = & cmd.exe /d /c $script
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to initialize MSVC environment"
+          }
+
+          foreach ($line in $variables) {
+            if ($line -match '^([^=]+)=(.*)$') {
+              $name = $Matches[1]
+              $value = $Matches[2]
+
+              if ($name -notmatch '^(GITHUB_|RUNNER_|NODE_OPTIONS$)') {
+                "$name=$value" >> $env:GITHUB_ENV
+              }
+            }
+          }
 
       - name: Build (C)
         shell: cmd
