@@ -601,6 +601,54 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dll$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dll$'
 
+      - name: Build whereami.c inside a larger translation unit
+        run: |
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe -ldl
+          ./amalgamation.exe
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp.exe -ldl
+          ./amalgamation-cpp.exe
+
+      - name: Build with the documented customization macros
+        run: |
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized.exe -ldl
+          ./customized.exe
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp.exe -ldl
+          ./customized-cpp.exe
+
   # ── macOS: Clang + GCC ──────────────────────────────────────────────────────
 
   macos:
@@ -683,6 +731,70 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dylib$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dylib$'
 
+      - name: Build whereami.c inside a larger translation unit
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
+          if [ "${{ matrix.label }}" = "gcc" ]; then
+            # Apple FB22501039
+            CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
+          fi
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation
+          if [ "${{ matrix.arch }}" != "x86" ]; then ./amalgamation; fi
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
+          if [ "${{ matrix.arch }}" != "x86" ]; then ./amalgamation-cpp; fi
+
+      - name: Build with the documented customization macros
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
+          if [ "${{ matrix.label }}" = "gcc" ]; then
+            # Apple FB22501039
+            CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
+          fi
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src $CFLAGS $defines customized.c -o customized
+          if [ "${{ matrix.arch }}" != "x86" ]; then ./customized; fi
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $defines customized.c -o customized-cpp
+          if [ "${{ matrix.arch }}" != "x86" ]; then ./customized-cpp; fi
+
   # ── iOS ─────────────────────────────────────────────────────────────────────
 
   ios:
@@ -714,6 +826,50 @@ jobs:
         run: |
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -arch arm64 src/whereami.c example/executable.c -o executable-cpp
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library-cpp.dylib
+
+      - name: Build whereami.c inside a larger translation unit
+        run: |
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -arch arm64 amalgamation.c -o amalgamation
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -arch arm64 amalgamation.c -o amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        run: |
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -arch arm64 $defines customized.c -o customized
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -arch arm64 $defines customized.c -o customized-cpp
 
   # ── Android ─────────────────────────────────────────────────────────────────
 
@@ -761,6 +917,50 @@ jobs:
         run: |
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+
+      - name: Build whereami.c inside a larger translation unit
+        run: |
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -fpie -pie amalgamation.c -o amalgamation -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -fpie -pie amalgamation.c -o amalgamation-cpp -ldl
+
+      - name: Build with the documented customization macros
+        run: |
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -fpie -pie $defines customized.c -o customized -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -fpie -pie $defines customized.c -o customized-cpp -ldl
 
   # ── FreeBSD ─────────────────────────────────────────────────────────────────
 
@@ -842,6 +1042,58 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
+      - name: Build whereami.c inside a larger translation unit
+        shell: freebsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          ./amalgamation
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          ./amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        shell: freebsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized
+          ./customized
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          ./customized-cpp
+
   # ── OpenBSD ─────────────────────────────────────────────────────────────────
 
   openbsd:
@@ -922,6 +1174,58 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
+      - name: Build whereami.c inside a larger translation unit
+        shell: openbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          ./amalgamation
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          ./amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        shell: openbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized
+          ./customized
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          ./customized-cpp
+
   # ── NetBSD ──────────────────────────────────────────────────────────────────
 
   netbsd:
@@ -992,6 +1296,58 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
+      - name: Build whereami.c inside a larger translation unit
+        shell: netbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          ./amalgamation
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          ./amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        shell: netbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized
+          ./customized
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          ./customized-cpp
+
   # ── DragonFly BSD ───────────────────────────────────────────────────────────
 
   dragonflybsd:
@@ -1061,6 +1417,58 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
+
+      - name: Build whereami.c inside a larger translation unit
+        shell: dragonflybsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          ./amalgamation
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          ./amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        shell: dragonflybsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized
+          ./customized
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          ./customized-cpp
 
   # ── Solaris ─────────────────────────────────────────────────────────────────
 
@@ -1134,3 +1542,55 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
+
+      - name: Build whereami.c inside a larger translation unit
+        shell: solaris {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          gcc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation -ldl
+          ./amalgamation
+          g++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp -ldl
+          ./amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        shell: solaris {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          gcc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized -ldl
+          ./customized
+          g++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp -ldl
+          ./customized-cpp
