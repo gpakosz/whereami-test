@@ -381,7 +381,8 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
   {
     bool retry = false;
 
-    maps = fopen(WAI_PROC_SELF_MAPS, "r");
+    // the 'e' mode asks for close-on-exec where the libc supports it
+    maps = fopen(WAI_PROC_SELF_MAPS, "re");
     if (!maps)
       break;
 
@@ -770,7 +771,8 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 
   for (ok = false; !ok; ok = true)
   {
-    self_exe = fopen(WAI_PROC_SELF_EXE, "r");
+    // the 'e' mode asks for close-on-exec where the libc supports it
+    self_exe = fopen(WAI_PROC_SELF_EXE, "re");
     if (!self_exe)
       break;
 
