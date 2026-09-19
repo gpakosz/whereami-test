@@ -128,18 +128,6 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-  # ── Extra configurations ────────────────────────────────────────────────────
-
-  extra-configurations:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    name: Linux | extra configurations
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
       - name: Build whereami.c inside a larger translation unit
         run: |
           cat > amalgamation.c <<'EOF'
