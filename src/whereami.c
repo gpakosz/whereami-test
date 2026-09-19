@@ -71,6 +71,8 @@ extern "C" {
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
+#include <stdlib.h> // _wfullpath()
+#include <string.h> // wcslen()
 #if defined(_MSC_VER) && (_MSC_VER >= 1900)
 #include <stdbool.h>
 #elif defined(__has_include)
