@@ -126,6 +126,70 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
+  # ── Configurations the matrices never select ────────────────────────────────
+
+  extra-configurations:
+    runs-on: ubuntu-24.04
+    name: Linux | extra configurations
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build with WAI_USE_PROC_SELF_EXE
+        run: |
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -DWAI_USE_PROC_SELF_EXE -c src/whereami.c -o /dev/null
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -DWAI_USE_PROC_SELF_EXE -c src/whereami.c -o /dev/null
+
+      - name: Build whereami.c inside a larger translation unit
+        run: |
+          cat > amalgamation.c <<'EOF'
+          #include "whereami.h"
+          #include "whereami.c"
+
+          int main(void)
+          {
+            return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
+          }
+          EOF
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          ./amalgamation
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          ./amalgamation-cpp
+
+      - name: Build with the documented customization macros
+        run: |
+          cat > customized.c <<'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
+
+          #include "whereami.c"
+
+          int main(void)
+          {
+            char buffer[4096];
+            int dirname_length = -1;
+            int length = my_getExecutablePath(buffer, (int)sizeof(buffer) - 1, &dirname_length);
+
+            if (length < 0 || dirname_length < 0)
+              return 1;
+            buffer[length] = '\0';
+            printf("executable path: %s\n", buffer);
+
+            return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
+          }
+          EOF
+          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized
+          ./customized
+          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          ./customized-cpp
+
   # ── Windows: MSVC (VS2022 + VS2026) ─────────────────────────────────────────
 
   windows-msvc:
