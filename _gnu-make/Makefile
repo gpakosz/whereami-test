@@ -6,8 +6,8 @@ ifeq ($(realpath .),)
 endif
 
 ifeq ($(platform),)
-  __uname_s := $(shell sh -c 'uname -s 2>/dev/null | tr [A-Z] [a-z] || echo unknown-platform')
-  __uname_m := $(shell sh -c 'uname -m 2>/dev/null | tr [A-Z] [a-z] || echo unknown-architecture')
+  __uname_s := $(shell sh -c 'uname -s 2>/dev/null | tr "A-Z" "a-z" || echo unknown-platform')
+  __uname_m := $(shell sh -c 'uname -m 2>/dev/null | tr "A-Z" "a-z" || echo unknown-architecture')
 
   ifeq ($(__uname_s),linux)
     override platform := linux
@@ -24,6 +24,10 @@ ifeq ($(platform),)
       override CC := gcc
     endif
   endif
+  ifeq ($(findstring cygwin,$(__uname_s)),cygwin)
+    override platform := cygwin
+    override architecture := $(__uname_m)
+  endif
   ifeq ($(__uname_s),freebsd)
     override platform := freebsd
     override architecture := $(__uname_m)
@@ -32,8 +36,16 @@ ifeq ($(platform),)
     override platform := openbsd
     override architecture := $(__uname_m)
   endif
-  ifeq ($(findstring cygwin,$(__uname_s)),cygwin)
-    override platform := cygwin
+  ifeq ($(__uname_s),netbsd)
+    override platform := netbsd
+    override architecture := $(__uname_m)
+  endif
+  ifeq ($(__uname_s),dragonfly)
+    override platform := dragonfly
+    override architecture := $(__uname_m)
+  endif
+  ifeq ($(__uname_s),sunos)
+    override platform := solaris
     override architecture := $(__uname_m)
   endif
 endif
@@ -48,9 +60,10 @@ testdir := $(realpath ../test)
 buildir := $(realpath .)/build
 binsubdir := $(platform)-$(architecture)
 bindir := $(prefix)/bin/$(binsubdir)
+makefile := $(lastword $(MAKEFILE_LIST))
 
-override CFLAGS += -O2 -g -Wall -pedantic -Werror -Wshadow -std=c99
-override CXXFLAGS += -O2 -g -Wall -pedantic -Werror -Wshadow
+override CFLAGS += -O2 -g -Wall -Wshadow -Wextra -pedantic -Werror -std=c99
+override CXXFLAGS += -O2 -g -Wall -Wshadow -Wextra -pedantic -Werror
 
 ifeq ($(shell printf "int main(int argc, char* argv[]) { return 0; }\n" | $(CC) -x c -o /dev/null -Wbad-function-cast -Werror - 2> /dev/null && echo 'ok'),ok)
   override CFLAGS += -Wbad-function-cast
@@ -65,11 +78,32 @@ override LDFLAGS += -ldl
 override CFLAGS += -fpic
 override CXXFLAGS += -fpic
 endif
+ifeq ($(platform),windows)
+override CFLAGS += -Wno-unused-parameter
+override CXXFLAGS += -Wno-unused-parameter
+endif
 ifeq ($(platform),freebsd)
 override CFLAGS += -fpic
 override CXXFLAGS += -fpic
 endif
 ifeq ($(platform),cygwin)
+override LDFLAGS += -ldl
+override CFLAGS += -fpic
+override CXXFLAGS += -fpic
+endif
+ifeq ($(platform),openbsd)
+override CFLAGS += -fpic
+override CXXFLAGS += -fpic
+endif
+ifeq ($(platform),netbsd)
+override CFLAGS += -fpic
+override CXXFLAGS += -fpic
+endif
+ifeq ($(platform),dragonfly)
+override CFLAGS += -fpic
+override CXXFLAGS += -fpic
+endif
+ifeq ($(platform),solaris)
 override LDFLAGS += -ldl
 override CFLAGS += -fpic
 override CXXFLAGS += -fpic
@@ -97,7 +131,16 @@ endif
 ifeq ($(platform),android)
 libsuffix := .so
 endif
-ifeq ($(platform),linux)
+ifeq ($(platform),openbsd)
+libsuffix := .so
+endif
+ifeq ($(platform),netbsd)
+libsuffix := .so
+endif
+ifeq ($(platform),dragonfly)
+libsuffix := .so
+endif
+ifeq ($(platform),solaris)
 libsuffix := .so
 endif
 
@@ -105,30 +148,30 @@ endif
 build: build-executable
 build-executable: $(bindir)/executable $(bindir)/executable-cpp
 
-$(bindir)/executable: $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/executable.c
+$(bindir)/executable: $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/executable.c $(makefile)
 	mkdir -p $(@D)
-	$(CC) -I $(srcdir) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) $(LDFLAGS) -o $@
+	$(CC) -I $(srcdir) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h $(makefile),$^) $(LDFLAGS) -o $@
 	$(if $(postbuild),$(postbuild) $@)
 
-$(bindir)/executable-cpp: $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/executable.c
+$(bindir)/executable-cpp: $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/executable.c $(makefile)
 	mkdir -p $(@D)
-	$(CXX) -x c++ -I $(srcdir) $(CPPFLAGS) $(CXXFLAGS) $(filter-out %.h,$^) $(LDFLAGS) -o $@
+	$(CXX) -x c++ -I $(srcdir) $(CPPFLAGS) $(CXXFLAGS) $(filter-out %.h $(makefile),$^) $(LDFLAGS) -o $@
 	$(if $(postbuild),$(postbuild) $@)
 
 .PHONY: build-library
 build: build-library
 build-library: $(bindir)/library$(libsuffix) $(bindir)/library-cpp$(libsuffix)
 
-$(bindir)/library$(libsuffix): $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/library.c
+$(bindir)/library$(libsuffix): $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/library.c $(makefile)
 	mkdir -p $(@D)
-	$(CC) -I $(srcdir) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) $(LDFLAGS) -shared -o $@
+	$(CC) -I $(srcdir) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h $(makefile),$^) $(LDFLAGS) -shared -o $@
 	$(if $(postbuild),$(postbuild) $@)
 
-$(bindir)/library-cpp$(libsuffix): $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/library.c
+$(bindir)/library-cpp$(libsuffix): $(srcdir)/whereami.c $(srcdir)/whereami.h $(exampledir)/library.c $(makefile)
 	mkdir -p $(@D)
-	$(CXX) -x c++ -I $(srcdir) $(CPPFLAGS) $(CXXFLAGS) $(filter-out %.h,$^) $(LDFLAGS) -shared -o $@
+	$(CXX) -x c++ -I $(srcdir) $(CPPFLAGS) $(CXXFLAGS) $(filter-out %.h $(makefile),$^) $(LDFLAGS) -shared -o $@
 	$(if $(postbuild),$(postbuild) $@)
 
 clean:
-	rm -rf $(buildir)
-	rm -rf $(bindir)
+	rm -rf '$(buildir)'
+	rm -rf '$(bindir)'
