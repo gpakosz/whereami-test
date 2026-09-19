@@ -1,0 +1,791 @@
+name: CI
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master]
+
+jobs:
+
+  # ── Linux: GCC + Clang, x64 and x86 ─────────────────────────────────────────
+
+  linux:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # GCC 9 — ubuntu-22.04
+          - { runner: ubuntu-22.04, cc: gcc-9,    cxx: g++-9,      arch: x64, pkg: gcc-9 g++-9 }
+          - { runner: ubuntu-22.04, cc: gcc-9,    cxx: g++-9,      arch: x86, pkg: gcc-9 g++-9 gcc-9-multilib g++-9-multilib }
+          - { runner: ubuntu-22.04, cc: gcc-10,   cxx: g++-10,     arch: x64, pkg: gcc-10 g++-10 }
+          - { runner: ubuntu-22.04, cc: gcc-10,   cxx: g++-10,     arch: x86, pkg: gcc-10 g++-10 gcc-10-multilib g++-10-multilib }
+          - { runner: ubuntu-22.04, cc: gcc-11,   cxx: g++-11,     arch: x64, pkg: gcc-11 g++-11 }
+          - { runner: ubuntu-22.04, cc: gcc-11,   cxx: g++-11,     arch: x86, pkg: gcc-11 g++-11 gcc-11-multilib g++-11-multilib }
+          - { runner: ubuntu-22.04, cc: gcc-12,   cxx: g++-12,     arch: x64, pkg: gcc-12 g++-12 }
+          - { runner: ubuntu-22.04, cc: gcc-12,   cxx: g++-12,     arch: x86, pkg: gcc-12 g++-12 gcc-12-multilib g++-12-multilib }
+          # GCC 13–14 — ubuntu-24.04
+          - { runner: ubuntu-24.04, cc: gcc-13,   cxx: g++-13,     arch: x64, pkg: gcc-13 g++-13 }
+          - { runner: ubuntu-24.04, cc: gcc-13,   cxx: g++-13,     arch: x86, pkg: gcc-13 g++-13 gcc-13-multilib g++-13-multilib }
+          - { runner: ubuntu-24.04, cc: gcc-14,   cxx: g++-14,     arch: x64, pkg: gcc-14 g++-14 }
+          - { runner: ubuntu-24.04, cc: gcc-14,   cxx: g++-14,     arch: x86, pkg: gcc-14 g++-14 gcc-14-multilib g++-14-multilib }
+          # Clang 13–16 — ubuntu-22.04
+          - { runner: ubuntu-22.04, cc: clang-13, cxx: clang++-13, arch: x64, pkg: clang-13 }
+          - { runner: ubuntu-22.04, cc: clang-13, cxx: clang++-13, arch: x86, pkg: clang-13 gcc-multilib g++-multilib }
+          - { runner: ubuntu-22.04, cc: clang-14, cxx: clang++-14, arch: x64, pkg: clang-14 }
+          - { runner: ubuntu-22.04, cc: clang-14, cxx: clang++-14, arch: x86, pkg: clang-14 gcc-multilib g++-multilib }
+          - { runner: ubuntu-22.04, cc: clang-15, cxx: clang++-15, arch: x64, pkg: clang-15 }
+          - { runner: ubuntu-22.04, cc: clang-15, cxx: clang++-15, arch: x86, pkg: clang-15 gcc-multilib g++-multilib }
+          - { runner: ubuntu-22.04, cc: clang-16, cxx: clang++-16, arch: x64, pkg: clang-16, llvm_repo: true }
+          - { runner: ubuntu-22.04, cc: clang-16, cxx: clang++-16, arch: x86, pkg: clang-16 gcc-multilib g++-multilib, llvm_repo: true }
+          # Clang 17–22 — ubuntu-24.04
+          - { runner: ubuntu-24.04, cc: clang-17, cxx: clang++-17, arch: x64, pkg: clang-17, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-17, cxx: clang++-17, arch: x86, pkg: clang-17 gcc-multilib g++-multilib, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-18, cxx: clang++-18, arch: x64, pkg: clang-18 }
+          - { runner: ubuntu-24.04, cc: clang-18, cxx: clang++-18, arch: x86, pkg: clang-18 gcc-multilib g++-multilib }
+          - { runner: ubuntu-24.04, cc: clang-19, cxx: clang++-19, arch: x64, pkg: clang-19, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-19, cxx: clang++-19, arch: x86, pkg: clang-19 gcc-multilib g++-multilib, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-20, cxx: clang++-20, arch: x64, pkg: clang-20, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-20, cxx: clang++-20, arch: x86, pkg: clang-20 gcc-multilib g++-multilib, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-21, cxx: clang++-21, arch: x64, pkg: clang-21, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-21, cxx: clang++-21, arch: x86, pkg: clang-21 gcc-multilib g++-multilib, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-22, cxx: clang++-22, arch: x64, pkg: clang-22, llvm_repo: true }
+          - { runner: ubuntu-24.04, cc: clang-22, cxx: clang++-22, arch: x86, pkg: clang-22 gcc-multilib g++-multilib, llvm_repo: true }
+
+    name: Linux | ${{ matrix.cc }} | ${{ matrix.arch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Add LLVM apt repository
+        if: matrix.llvm_repo
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-$(echo '${{ matrix.cc }}' | grep -oP '\d+') main" \
+            | sudo tee /etc/apt/sources.list.d/llvm.list
+
+      - name: Install compiler packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.pkg }}
+
+      - name: Build (C)
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
+          ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
+          ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
+
+      - name: Build (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+
+      - name: Run and validate (C)
+        run: |
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+
+      - name: Run and validate (C++)
+        run: |
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+
+  # ── Windows: MSVC (VS2022 + VS2026) ─────────────────────────────────────────
+
+  windows-msvc:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: windows-2022,        label: "2022", vsversion: "17.0", arch: x86 }
+          - { runner: windows-2022,        label: "2022", vsversion: "17.0", arch: x64 }
+          - { runner: windows-2025-vs2026, label: "2026", vsversion: "18.0", arch: x86 }
+          - { runner: windows-2025-vs2026, label: "2026", vsversion: "18.0", arch: x64 }
+
+    name: Windows | MSVC ${{ matrix.label }} | ${{ matrix.arch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          vsversion: ${{ matrix.vsversion }}
+          arch: ${{ matrix.arch }}
+
+      - name: Build (C)
+        shell: cmd
+        run: |
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src src\whereami.c example\executable.c /Fe:executable.exe
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /I src /LD src\whereami.c example\library.c /Fe:library.dll
+
+      - name: Build (C++)
+        shell: cmd
+        run: |
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP src\whereami.c example\executable.c /Fe:executable-cpp.exe
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP /LD src\whereami.c example\library.c /Fe:library-cpp.dll
+
+      - name: Run and validate (C)
+        shell: pwsh
+        run: |
+          $output = (& ./executable.exe) | Out-String
+          Write-Host $output
+          if ($output -notmatch '(?m)^executable path: .+\\executable\.exe\r?$') {
+            Write-Host "::error::executable path not found or incorrect in output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^module path: .+\\executable\.exe\r?$') {
+            Write-Host "::error::module path not found or incorrect in output"
+            exit 1
+          }
+          Write-Host '───'
+          $output = (& ./executable.exe '--load-library=./library.dll') | Out-String
+          Write-Host $output
+          if ($output -notmatch '(?m)^library loaded\r?$') {
+            Write-Host "::error::library was not loaded"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^executable path: .+\\executable\.exe\r?$') {
+            Write-Host "::error::executable path not found or incorrect in library output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^module path: .+\\library\.dll\r?$') {
+            Write-Host "::error::module path not found or incorrect in library output"
+            exit 1
+          }
+
+      - name: Run and validate (C++)
+        shell: pwsh
+        run: |
+          $output = (& './executable-cpp.exe') | Out-String
+          Write-Host $output
+          if ($output -notmatch '(?m)^executable path: .+\\executable-cpp\.exe\r?$') {
+            Write-Host "::error::executable path not found or incorrect in output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^module path: .+\\executable-cpp\.exe\r?$') {
+            Write-Host "::error::module path not found or incorrect in output"
+            exit 1
+          }
+          Write-Host '───'
+          $output = (& ./executable-cpp.exe '--load-library=./library-cpp.dll') | Out-String
+          Write-Host $output
+          if ($output -notmatch '(?m)^library loaded\r?$') {
+            Write-Host "::error::library was not loaded"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^executable path: .+\\executable-cpp\.exe\r?$') {
+            Write-Host "::error::executable path not found or incorrect in library output"
+            exit 1
+          }
+          if ($output -notmatch '(?m)^module path: .+\\library-cpp\.dll\r?$') {
+            Write-Host "::error::module path not found or incorrect in library output"
+            exit 1
+          }
+
+  # ── Windows: MinGW (GCC + Clang via MSYS2) ──────────────────────────────────
+
+  windows-mingw:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sys: mingw32, cc: gcc,   cxx: g++,     arch: x86, pkg: mingw-w64-i686-gcc }
+          - { sys: mingw64, cc: gcc,   cxx: g++,     arch: x64, pkg: mingw-w64-x86_64-gcc }
+          - { sys: mingw64, cc: clang, cxx: clang++, arch: x64, pkg: mingw-w64-x86_64-clang }
+
+    name: Windows MinGW | ${{ matrix.cc }} | ${{ matrix.arch }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.sys }}
+          install: ${{ matrix.pkg }}
+
+      - name: Build (C)
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable.exe
+          ${{ matrix.cc }} -I src $CFLAGS -shared src/whereami.c example/library.c -o library.dll
+
+      - name: Build (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp.exe
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared src/whereami.c example/library.c -o library-cpp.dll
+
+      - name: Run and validate (C)
+        run: |
+          output=$(./executable.exe | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -qE '^executable path: .+\\executable\.exe$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+\\executable\.exe$'
+          echo '───'
+          output=$(./executable.exe --load-library=./library.dll | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+\\executable\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+\\library\.dll$'
+
+      - name: Run and validate (C++)
+        run: |
+          output=$(./executable-cpp.exe | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -qE '^executable path: .+\\executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+\\executable-cpp\.exe$'
+          echo '───'
+          output=$(./executable-cpp.exe --load-library=./library-cpp.dll | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+\\executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+\\library-cpp\.dll$'
+
+  # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
+
+  windows-cygwin:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cc: gcc,   cxx: g++,    }
+          - { cc: clang, cxx: clang++ }
+
+    name: Windows Cygwin | ${{ matrix.cc }}
+    env:
+      CHERE_INVOKING: 1
+    defaults:
+      run:
+        shell: bash.exe -leo pipefail -o igncr {0}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure Cygwin packages caching
+        uses: actions/cache@v4
+        with:
+          path: D:\cygwin-packages
+          key: cygwin-packages-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            cygwin-packages-
+
+      - name: Install Cygwin packages
+        uses: cygwin/cygwin-install-action@v6
+        with:
+          packages: |
+            gcc-core
+            gcc-g++
+            clang
+
+      - name: Build (C)
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable.exe -ldl
+          ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.dll -ldl
+
+      - name: Build (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp.exe -ldl
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.dll -ldl
+
+      - name: Run and validate (C)
+        run: |
+          output=$(./executable.exe | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable\.exe$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable\.exe$'
+          echo '───'
+          output=$(./executable.exe --load-library=./library.dll | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.dll$'
+
+      - name: Run and validate (C++)
+        run: |
+          output=$(./executable-cpp.exe | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp\.exe$'
+          echo '───'
+          output=$(./executable-cpp.exe --load-library=./library-cpp.dll | tee >(cat >&2))
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp\.exe$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dll$'
+
+  # ── macOS: Clang + GCC ──────────────────────────────────────────────────────
+
+  macos:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-14, os: Sonoma,  cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
+          - { runner: macos-14, os: Sonoma,  cc: clang,  cxx: clang++, label: "clang", arch: x86 }
+          - { runner: macos-14, os: Sonoma,  cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
+          - { runner: macos-15, os: Sequoia, cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
+          - { runner: macos-15, os: Sequoia, cc: clang,  cxx: clang++, label: "clang", arch: x86 }
+          - { runner: macos-15, os: Sequoia, cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
+          - { runner: macos-26, os: Tahoe,   cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
+          - { runner: macos-26, os: Tahoe,   cc: clang,  cxx: clang++, label: "clang", arch: x86 }
+          - { runner: macos-26, os: Tahoe,   cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
+
+    name: macOS ${{ matrix.os }} | ${{ matrix.label }} | ${{ matrix.arch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install GCC
+        if: matrix.brew
+        run: brew install -q ${{ matrix.brew }}
+
+      - name: Build (C)
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
+          ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable
+          ${{ matrix.cc }} -I src $CFLAGS -shared src/whereami.c example/library.c -o library.dylib
+
+      - name: Build (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
+          if [ "${{ matrix.label }}" = "gcc" ]; then
+            # Apple FB22501039
+            CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
+          fi
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared src/whereami.c example/library.c -o library-cpp.dylib
+
+      - name: Run and validate (C)
+        if: matrix.arch != 'x86'
+        run: |
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.dylib)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.dylib$'
+
+      - name: Run and validate (C++)
+        if: matrix.arch != 'x86'
+        run: |
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.dylib)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dylib$'
+
+  # ── iOS ─────────────────────────────────────────────────────────────────────
+
+  ios:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # iOS arm64
+          - runner: macos-15
+            target: arm64
+            cc: "xcrun --sdk iphoneos clang"
+            cxx: "xcrun --sdk iphoneos clang++"
+
+    name: iOS — ${{ matrix.target }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build (C)
+        run: |
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -arch arm64 src/whereami.c example/executable.c -o executable
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library.dylib
+
+      - name: Build (C++)
+        run: |
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -arch arm64 src/whereami.c example/executable.c -o executable-cpp
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library-cpp.dylib
+
+  # ── Android ─────────────────────────────────────────────────────────────────
+
+  android:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Android armeabi-v7a
+          - runner: ubuntu-24.04
+            target: armv7
+            cc: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+            cxx: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++"
+          # Android arm64-v8a
+          - runner: ubuntu-24.04
+            target: arm64
+            cc: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+            cxx: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
+          # Android x86
+          - runner: ubuntu-24.04
+            target: x86
+            cc: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"
+            cxx: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang++"
+          # Android x86_64
+          - runner: ubuntu-24.04
+            target: x64
+            cc: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang"
+            cxx: "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang++"
+
+    name: Android — ${{ matrix.target }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build (C)
+        run: |
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -fpie -pie src/whereami.c example/executable.c -o executable -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
+
+      - name: Build (C++)
+        run: |
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+
+  # ── FreeBSD ─────────────────────────────────────────────────────────────────
+
+  freebsd:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, target: x64 }
+          - { arch: aarch64, target: arm64 }
+          - { arch: riscv64, target: riscv64 }
+    name: FreeBSD | clang | ${{ matrix.target }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Starting the FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          arch: ${{ matrix.arch }}
+          mem: 1024
+          cpu: 2
+          sync: scp
+          copyback: false
+
+      - name: Build (C)
+        shell: freebsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
+          cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
+
+      - name: Build (C++)
+        shell: freebsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
+          c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
+
+      - name: Run and validate (C)
+        shell: freebsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+
+      - name: Run and validate (C++)
+        shell: freebsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+
+  # ── OpenBSD ─────────────────────────────────────────────────────────────────
+
+  openbsd:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, target: x64 }
+          - { arch: aarch64, target: arm64 }
+          - { arch: riscv64, target: riscv64 }
+    name: OpenBSD | clang | ${{ matrix.target }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Starting the OpenBSD VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          arch: ${{ matrix.arch }}
+          mem: 1024
+          cpu: 2
+          sync: scp
+          copyback: false
+
+      - name: Build (C)
+        shell: openbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
+          cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
+
+      - name: Build (C++)
+        shell: openbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
+          c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
+
+      - name: Run and validate (C)
+        shell: openbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+
+      - name: Run and validate (C++)
+        shell: openbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+
+  # ── NetBSD ──────────────────────────────────────────────────────────────────
+
+  netbsd:
+    runs-on: ubuntu-latest
+    name: NetBSD | gcc
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Starting the NetBSD VM
+        uses: vmactions/netbsd-vm@v1
+        with:
+          mem: 1024
+          cpu: 2
+
+      - name: Build (C)
+        shell: netbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
+          cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
+
+      - name: Build (C++)
+        shell: netbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
+          c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
+
+      - name: Run and validate (C)
+        shell: netbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+
+      - name: Run and validate (C++)
+        shell: netbsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+
+  # ── DragonFly BSD ───────────────────────────────────────────────────────────
+
+  dragonflybsd:
+    runs-on: ubuntu-latest
+    name: DragonFly BSD | gcc
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Starting the DragonFlyBSD VM
+        uses: vmactions/dragonflybsd-vm@v1
+        with:
+          mem: 1024
+          cpu: 2
+
+      - name: Build (C)
+        shell: dragonflybsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
+          cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
+
+      - name: Build (C++)
+        shell: dragonflybsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
+          c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
+
+      - name: Run and validate (C)
+        shell: dragonflybsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+
+      - name: Run and validate (C++)
+        shell: dragonflybsd {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+
+  # ── Solaris ─────────────────────────────────────────────────────────────────
+
+  solaris:
+    runs-on: ubuntu-latest
+    name: Solaris | gcc
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Starting the Solaris VM
+        uses: vmactions/solaris-vm@v1
+        with:
+          release: "11.4-gcc"
+          copyback: false
+          prepare: pkg install -q text/gnu-grep || [ $? -eq 4 ]
+
+      - name: Build (C)
+        shell: solaris {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          gcc -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
+          gcc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
+
+      - name: Build (C++)
+        shell: solaris {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          g++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
+          g++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+
+      - name: Run and validate (C)
+        shell: solaris {0}
+        run: |
+          export PATH=/usr/gnu/bin:$PATH
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+
+      - name: Run and validate (C++)
+        shell: solaris {0}
+        run: |
+          export PATH=/usr/gnu/bin:$PATH
+          cd "$GITHUB_WORKSPACE"
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'

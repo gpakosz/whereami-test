@@ -1,4 +1,5 @@
 # Where Am I?
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
 A drop-in two files library to locate the current executable and the current
 module on the file system.
