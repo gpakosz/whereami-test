@@ -858,7 +858,15 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 
 #if defined(__OpenBSD__)
 
+#include <sys/stat.h>
 #include <unistd.h>
+
+static bool WAI_PREFIX(isExecutableFile_)(const char* path)
+{
+  struct stat st;
+
+  return access(path, X_OK) == 0 && stat(path, &st) == 0 && S_ISREG(st.st_mode);
+}
 
 WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
@@ -882,6 +890,11 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
     int mib[4] = { CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV };
     size_t size;
 
+    // argv[0] and $PATH both come from whoever called execve(), and OpenBSD
+    // does not scrub them for set-uid processes
+    if (issetugid())
+      break;
+
     if (sysctl(mib, 4, NULL, &size, NULL, 0) != 0)
         break;
 
@@ -902,9 +915,13 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 
     if (strchr(argv[0], '/'))
     {
+      // only consider files that are executable
       resolved = realpath(argv[0], buffer2);
-      if (!resolved)
+      if (!resolved || !WAI_PREFIX(isExecutableFile_)(resolved))
+      {
+        resolved = NULL;
         break;
+      }
     }
     else
     {
@@ -931,9 +948,13 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
             buffer2[end - begin] = '/';
             memcpy(buffer2 + (end - begin) + 1, argv[0], argv0_length + 1);
 
-            resolved = realpath(buffer2, buffer3);
-            if (resolved)
-              break;
+            // only consider files that are executable
+            if (WAI_PREFIX(isExecutableFile_)(buffer2))
+            {
+              resolved = realpath(buffer2, buffer3);
+              if (resolved)
+                break;
+            }
           }
         }
 
