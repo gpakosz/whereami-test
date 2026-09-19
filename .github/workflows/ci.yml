@@ -19,6 +19,7 @@ jobs:
 
   linux:
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -130,6 +131,7 @@ jobs:
 
   extra-configurations:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     name: Linux | extra configurations
     steps:
       - name: Checkout repository
@@ -194,6 +196,7 @@ jobs:
 
   windows-msvc:
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -321,6 +324,7 @@ jobs:
 
   windows-mingw:
     runs-on: windows-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -388,6 +392,7 @@ jobs:
 
   windows-cygwin:
     runs-on: windows-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -467,6 +472,7 @@ jobs:
 
   macos:
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -548,6 +554,7 @@ jobs:
 
   ios:
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -579,6 +586,7 @@ jobs:
 
   android:
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -625,6 +633,7 @@ jobs:
 
   freebsd:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -704,6 +713,7 @@ jobs:
 
   openbsd:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -783,6 +793,7 @@ jobs:
 
   netbsd:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     name: NetBSD | gcc
     steps:
       - name: Checkout repository
@@ -852,6 +863,7 @@ jobs:
 
   dragonflybsd:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     name: DragonFly BSD | gcc
     steps:
       - name: Checkout repository
@@ -921,6 +933,7 @@ jobs:
 
   solaris:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     name: Solaris | gcc
     steps:
       - name: Checkout repository
