@@ -147,14 +147,20 @@ jobs:
       - name: Build with the documented customization macros
         run: |
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -370,12 +376,11 @@ jobs:
           # points go into the source the way a user would put them in a config
           # header
           @'
-          #include <stdio.h>
-          #include <stdlib.h>
+          #include <stddef.h>
 
-          void* my_malloc(size_t size) { return malloc(size); }
-          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
-          void my_free(void* p) { free(p); }
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
 
           #define WAI_FUNCSPEC static
           #define WAI_PREFIX(f) my_##f
@@ -384,6 +389,13 @@ jobs:
           #define WAI_FREE(p) my_free(p)
 
           #include "whereami.c"
+
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
 
           int main(void)
           {
@@ -489,12 +501,11 @@ jobs:
       - name: Build with the documented customization macros
         run: |
           cat > customized.c <<'EOF'
-          #include <stdio.h>
-          #include <stdlib.h>
+          #include <stddef.h>
 
-          void* my_malloc(size_t size) { return malloc(size); }
-          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
-          void my_free(void* p) { free(p); }
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
 
           #define WAI_FUNCSPEC static
           #define WAI_PREFIX(f) my_##f
@@ -503,6 +514,13 @@ jobs:
           #define WAI_FREE(p) my_free(p)
 
           #include "whereami.c"
+
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          void* my_malloc(size_t size) { return malloc(size); }
+          void* my_realloc(void* p, size_t size) { return realloc(p, size); }
+          void my_free(void* p) { free(p); }
 
           int main(void)
           {
@@ -620,14 +638,20 @@ jobs:
       - name: Build with the documented customization macros
         run: |
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -766,14 +790,20 @@ jobs:
             CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
           fi
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -844,14 +874,20 @@ jobs:
       - name: Build with the documented customization macros
         run: |
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -935,14 +971,20 @@ jobs:
       - name: Build with the documented customization macros
         run: |
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -1065,14 +1107,20 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -1197,14 +1245,20 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -1319,14 +1373,20 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -1441,14 +1501,20 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
@@ -1566,14 +1632,20 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
+          #include <stddef.h>
+
+          void* my_malloc(size_t size);
+          void* my_realloc(void* p, size_t size);
+          void my_free(void* p);
+
+          #include "whereami.c"
+
           #include <stdio.h>
           #include <stdlib.h>
 
           void* my_malloc(size_t size) { return malloc(size); }
           void* my_realloc(void* p, size_t size) { return realloc(p, size); }
           void my_free(void* p) { free(p); }
-
-          #include "whereami.c"
 
           int main(void)
           {
