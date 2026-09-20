@@ -1035,6 +1035,7 @@ jobs:
       - name: Build (C)
         shell: freebsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
@@ -1043,6 +1044,7 @@ jobs:
       - name: Build (C++)
         shell: freebsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
@@ -1051,6 +1053,7 @@ jobs:
       - name: Run and validate (C)
         shell: freebsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable)
           printf '%s\n' "$output"
@@ -1069,6 +1072,7 @@ jobs:
       - name: Run and validate (C++)
         shell: freebsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable-cpp)
           printf '%s\n' "$output"
@@ -1087,6 +1091,7 @@ jobs:
       - name: Build whereami.c inside a larger translation unit
         shell: freebsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -1105,6 +1110,7 @@ jobs:
       - name: Build with the documented customization macros
         shell: freebsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -1173,6 +1179,7 @@ jobs:
       - name: Build (C)
         shell: openbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
@@ -1181,6 +1188,7 @@ jobs:
       - name: Build (C++)
         shell: openbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
@@ -1189,6 +1197,7 @@ jobs:
       - name: Run and validate (C)
         shell: openbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable)
           printf '%s\n' "$output"
@@ -1207,6 +1216,7 @@ jobs:
       - name: Run and validate (C++)
         shell: openbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable-cpp)
           printf '%s\n' "$output"
@@ -1225,6 +1235,7 @@ jobs:
       - name: Build whereami.c inside a larger translation unit
         shell: openbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -1243,6 +1254,7 @@ jobs:
       - name: Build with the documented customization macros
         shell: openbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -1301,6 +1313,7 @@ jobs:
       - name: Build (C)
         shell: netbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
@@ -1309,6 +1322,7 @@ jobs:
       - name: Build (C++)
         shell: netbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
@@ -1317,6 +1331,7 @@ jobs:
       - name: Run and validate (C)
         shell: netbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable)
           printf '%s\n' "$output"
@@ -1335,6 +1350,7 @@ jobs:
       - name: Run and validate (C++)
         shell: netbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable-cpp)
           printf '%s\n' "$output"
@@ -1353,6 +1369,7 @@ jobs:
       - name: Build whereami.c inside a larger translation unit
         shell: netbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -1371,6 +1388,7 @@ jobs:
       - name: Build with the documented customization macros
         shell: netbsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -1429,6 +1447,7 @@ jobs:
       - name: Build (C)
         shell: dragonflybsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
@@ -1437,6 +1456,7 @@ jobs:
       - name: Build (C++)
         shell: dragonflybsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
@@ -1445,6 +1465,7 @@ jobs:
       - name: Run and validate (C)
         shell: dragonflybsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable)
           printf '%s\n' "$output"
@@ -1463,6 +1484,7 @@ jobs:
       - name: Run and validate (C++)
         shell: dragonflybsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           output=$(./executable-cpp)
           printf '%s\n' "$output"
@@ -1481,6 +1503,7 @@ jobs:
       - name: Build whereami.c inside a larger translation unit
         shell: dragonflybsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -1499,6 +1522,7 @@ jobs:
       - name: Build with the documented customization macros
         shell: dragonflybsd {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -1558,6 +1582,7 @@ jobs:
       - name: Build (C)
         shell: solaris {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
           gcc -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
@@ -1566,6 +1591,7 @@ jobs:
       - name: Build (C++)
         shell: solaris {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
           g++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
@@ -1574,6 +1600,7 @@ jobs:
       - name: Run and validate (C)
         shell: solaris {0}
         run: |
+          set -e
           export PATH=/usr/gnu/bin:$PATH
           cd "$GITHUB_WORKSPACE"
           output=$(./executable)
@@ -1593,6 +1620,7 @@ jobs:
       - name: Run and validate (C++)
         shell: solaris {0}
         run: |
+          set -e
           export PATH=/usr/gnu/bin:$PATH
           cd "$GITHUB_WORKSPACE"
           output=$(./executable-cpp)
@@ -1612,6 +1640,7 @@ jobs:
       - name: Build whereami.c inside a larger translation unit
         shell: solaris {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -1630,6 +1659,7 @@ jobs:
       - name: Build with the documented customization macros
         shell: solaris {0}
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE"
           cat > customized.c <<'EOF'
           #include <stddef.h>
