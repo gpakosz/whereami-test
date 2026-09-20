@@ -1704,3 +1704,118 @@ jobs:
           ./customized
           g++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp -ldl
           ./customized-cpp
+
+  # ── Sanitizers ──────────────────────────────────────────────────────────────
+
+  sanitizers-asan-ubsan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cc: gcc,   cxx: g++ }
+          - { cc: clang, cxx: clang++ }
+
+    name: Sanitizers (ASan + UBSan) | ${{ matrix.cc }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build (C)
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=all"
+          ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
+          ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
+
+      - name: Build (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=all"
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+
+      - name: Run and validate (C)
+        run: |
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
+
+      - name: Run and validate (C++)
+        run: |
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
+
+  sanitizers-memory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cc: clang, cxx: clang++ }
+
+    name: Sanitizers (MSan) | ${{ matrix.cc }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build (C)
+        run: |
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fno-omit-frame-pointer -fsanitize=memory -fno-sanitize-recover=all"
+          ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
+          ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
+
+      - name: Build (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fno-omit-frame-pointer -fsanitize=memory -fno-sanitize-recover=all"
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+
+      - name: Run and validate (C)
+        run: |
+          output=$(./executable)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          echo '───'
+          output=$(./executable --load-library=./library.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
+
+      - name: Run and validate (C++)
+        run: |
+          output=$(./executable-cpp)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          echo '───'
+          output=$(./executable-cpp --load-library=./library-cpp.so)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
