@@ -39,6 +39,11 @@ jobs:
           - { runner: ubuntu-24.04, cc: gcc-13,   cxx: g++-13,     arch: x86, pkg: gcc-13 g++-13 gcc-13-multilib g++-13-multilib }
           - { runner: ubuntu-24.04, cc: gcc-14,   cxx: g++-14,     arch: x64, pkg: gcc-14 g++-14 }
           - { runner: ubuntu-24.04, cc: gcc-14,   cxx: g++-14,     arch: x86, pkg: gcc-14 g++-14 gcc-14-multilib g++-14-multilib }
+          # GCC 15-16 — ubuntu-26.04
+          - { runner: ubuntu-26.04, cc: gcc-15,   cxx: g++-15,     arch: x64, pkg: gcc-15 g++-15 }
+          - { runner: ubuntu-26.04, cc: gcc-15,   cxx: g++-15,     arch: x86, pkg: gcc-15 g++-15 gcc-15-multilib g++-15-multilib }
+          - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x64, pkg: gcc-16 g++-16 }
+          - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x86, pkg: gcc-16 g++-16 gcc-16-multilib g++-16-multilib }
           # Clang 13–16 — ubuntu-22.04
           - { runner: ubuntu-22.04, cc: clang-13, cxx: clang++-13, arch: x64, pkg: clang-13 }
           - { runner: ubuntu-22.04, cc: clang-13, cxx: clang++-13, arch: x86, pkg: clang-13 gcc-multilib g++-multilib }
@@ -61,6 +66,9 @@ jobs:
           - { runner: ubuntu-24.04, cc: clang-21, cxx: clang++-21, arch: x86, pkg: clang-21 gcc-multilib g++-multilib, llvm_repo: true }
           - { runner: ubuntu-24.04, cc: clang-22, cxx: clang++-22, arch: x64, pkg: clang-22, llvm_repo: true }
           - { runner: ubuntu-24.04, cc: clang-22, cxx: clang++-22, arch: x86, pkg: clang-22 gcc-multilib g++-multilib, llvm_repo: true }
+          # Clang 23 — ubuntu-26.04
+          - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true }
+          - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x86, pkg: clang-23 gcc-multilib g++-multilib, llvm_repo: true }
 
     name: Linux | ${{ matrix.cc }} | ${{ matrix.arch }}
     steps:
