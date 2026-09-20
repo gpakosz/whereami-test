@@ -698,9 +698,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: macos-14, os: Sonoma,  cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
-          - { runner: macos-14, os: Sonoma,  cc: clang,  cxx: clang++, label: "clang", arch: x86 }
-          - { runner: macos-14, os: Sonoma,  cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
           - { runner: macos-15, os: Sequoia, cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
           - { runner: macos-15, os: Sequoia, cc: clang,  cxx: clang++, label: "clang", arch: x86 }
           - { runner: macos-15, os: Sequoia, cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
