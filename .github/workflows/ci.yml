@@ -433,7 +433,9 @@ jobs:
         include:
           - { sys: mingw32, cc: gcc,   cxx: g++,     arch: x86, pkg: mingw-w64-i686-gcc }
           - { sys: mingw64, cc: gcc,   cxx: g++,     arch: x64, pkg: mingw-w64-x86_64-gcc }
-          - { sys: mingw64, cc: clang, cxx: clang++, arch: x64, pkg: mingw-w64-x86_64-clang }
+          # clang in MINGW64 does not pull the headers, crt or linker in
+          # itself, they come from the gcc package
+          - { sys: mingw64, cc: clang, cxx: clang++, arch: x64, pkg: mingw-w64-x86_64-clang mingw-w64-x86_64-gcc }
 
     name: Windows MinGW | ${{ matrix.cc }} | ${{ matrix.arch }}
     defaults:
