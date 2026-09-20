@@ -130,6 +130,9 @@ jobs:
 
       - name: Build whereami.c inside a larger translation unit
         run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; CXXFLAGS="$CXXFLAGS -m32"; fi
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
           #include "whereami.c"
@@ -139,13 +142,16 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
         run: |
+          CFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -pedantic -Werror -std=c++11"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; CXXFLAGS="$CXXFLAGS -m32"; fi
           cat > customized.c <<'EOF'
           #include <stddef.h>
 
@@ -177,9 +183,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c99 $defines customized.c -o customized
+          ${{ matrix.cc }} -I src $CFLAGS $defines customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $defines customized.c -o customized-cpp
           ./customized-cpp
 
   # ── Windows: MSVC (VS2022 + VS2026) ─────────────────────────────────────────
