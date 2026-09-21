@@ -44,18 +44,18 @@ jobs:
           - { runner: ubuntu-26.04, cc: gcc-15,   cxx: g++-15,     arch: x86, pkg: gcc-15 g++-15 gcc-15-multilib g++-15-multilib }
           - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x64, pkg: gcc-16 g++-16 }
           - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x86, pkg: gcc-16 g++-16 gcc-16-multilib g++-16-multilib }
-          # Clang 13–16 — ubuntu-22.04
+          # Clang 13–15 — ubuntu-22.04
           - { runner: ubuntu-22.04, cc: clang-13, cxx: clang++-13, arch: x64, pkg: clang-13 }
           - { runner: ubuntu-22.04, cc: clang-13, cxx: clang++-13, arch: x86, pkg: clang-13 gcc-multilib g++-multilib }
           - { runner: ubuntu-22.04, cc: clang-14, cxx: clang++-14, arch: x64, pkg: clang-14 }
           - { runner: ubuntu-22.04, cc: clang-14, cxx: clang++-14, arch: x86, pkg: clang-14 gcc-multilib g++-multilib }
           - { runner: ubuntu-22.04, cc: clang-15, cxx: clang++-15, arch: x64, pkg: clang-15 }
           - { runner: ubuntu-22.04, cc: clang-15, cxx: clang++-15, arch: x86, pkg: clang-15 gcc-multilib g++-multilib }
-          - { runner: ubuntu-22.04, cc: clang-16, cxx: clang++-16, arch: x64, pkg: clang-16, llvm_repo: true }
-          - { runner: ubuntu-22.04, cc: clang-16, cxx: clang++-16, arch: x86, pkg: clang-16 gcc-multilib g++-multilib, llvm_repo: true }
-          # Clang 17–22 — ubuntu-24.04
-          - { runner: ubuntu-24.04, cc: clang-17, cxx: clang++-17, arch: x64, pkg: clang-17, llvm_repo: true }
-          - { runner: ubuntu-24.04, cc: clang-17, cxx: clang++-17, arch: x86, pkg: clang-17 gcc-multilib g++-multilib, llvm_repo: true }
+          # Clang 16–22 — ubuntu-24.04, 16 to 18 ship with the image
+          - { runner: ubuntu-24.04, cc: clang-16, cxx: clang++-16, arch: x64, pkg: clang-16 }
+          - { runner: ubuntu-24.04, cc: clang-16, cxx: clang++-16, arch: x86, pkg: clang-16 gcc-multilib g++-multilib }
+          - { runner: ubuntu-24.04, cc: clang-17, cxx: clang++-17, arch: x64, pkg: clang-17 }
+          - { runner: ubuntu-24.04, cc: clang-17, cxx: clang++-17, arch: x86, pkg: clang-17 gcc-multilib g++-multilib }
           - { runner: ubuntu-24.04, cc: clang-18, cxx: clang++-18, arch: x64, pkg: clang-18 }
           - { runner: ubuntu-24.04, cc: clang-18, cxx: clang++-18, arch: x86, pkg: clang-18 gcc-multilib g++-multilib }
           - { runner: ubuntu-24.04, cc: clang-19, cxx: clang++-19, arch: x64, pkg: clang-19, llvm_repo: true }
