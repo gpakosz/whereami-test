@@ -14,6 +14,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+# GitHub's implicit shell is `bash -e {0}`, without pipefail
+# Naming it explicitly gets `bash --noprofile --norc -eo pipefail {0}` instead
+defaults:
+  run:
+    shell: bash
+
 jobs:
 
   # ── Linux: GCC + Clang, x64 and x86 ─────────────────────────────────────────
@@ -80,10 +86,6 @@ jobs:
       - name: Add LLVM apt repository
         if: matrix.llvm_repo
         run: |
-          # gpg --dearmor exits 0 on empty input, so without pipefail a failed
-          # download yields an empty keyring and apt-get update later reports
-          # NO_PUBKEY instead of the transfer that actually failed
-          set -o pipefail
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg
           . /etc/os-release
           echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-$(echo '${{ matrix.cc }}' | grep -oP '\d+') main" \
