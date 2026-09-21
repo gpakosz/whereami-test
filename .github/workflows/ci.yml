@@ -80,6 +80,10 @@ jobs:
       - name: Add LLVM apt repository
         if: matrix.llvm_repo
         run: |
+          # gpg --dearmor exits 0 on empty input, so without pipefail a failed
+          # download yields an empty keyring and apt-get update later reports
+          # NO_PUBKEY instead of the transfer that actually failed
+          set -o pipefail
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg
           . /etc/os-release
           echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-$(echo '${{ matrix.cc }}' | grep -oP '\d+') main" \
