@@ -1352,6 +1352,8 @@ jobs:
         with:
           mem: 1024
           cpu: 2
+          sync: scp
+          copyback: false
 
       - name: Build (C)
         shell: netbsd {0}
@@ -1486,6 +1488,8 @@ jobs:
         with:
           mem: 1024
           cpu: 2
+          sync: scp
+          copyback: false
 
       - name: Build (C)
         shell: dragonflybsd {0}
