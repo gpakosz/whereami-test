@@ -286,6 +286,10 @@ jobs:
         shell: pwsh
         run: |
           $output = (& ./executable.exe) | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::executable.exe exited with $LASTEXITCODE"
+            exit 1
+          }
           Write-Host $output
           if ($output -notmatch '(?m)^executable path: .+\\executable\.exe\r?$') {
             Write-Host "::error::executable path not found or incorrect in output"
@@ -305,6 +309,10 @@ jobs:
           }
           Write-Host '───'
           $output = (& ./executable.exe '--load-library=./library.dll') | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::executable.exe --load-library=./library.dll exited with $LASTEXITCODE"
+            exit 1
+          }
           Write-Host $output
           if ($output -notmatch '(?m)^library loaded\r?$') {
             Write-Host "::error::library was not loaded"
@@ -331,6 +339,10 @@ jobs:
         shell: pwsh
         run: |
           $output = (& './executable-cpp.exe') | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::executable-cpp.exe exited with $LASTEXITCODE"
+            exit 1
+          }
           Write-Host $output
           if ($output -notmatch '(?m)^executable path: .+\\executable-cpp\.exe\r?$') {
             Write-Host "::error::executable path not found or incorrect in output"
@@ -350,6 +362,10 @@ jobs:
           }
           Write-Host '───'
           $output = (& ./executable-cpp.exe '--load-library=./library-cpp.dll') | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::executable-cpp.exe --load-library=./library-cpp.dll exited with $LASTEXITCODE"
+            exit 1
+          }
           Write-Host $output
           if ($output -notmatch '(?m)^library loaded\r?$') {
             Write-Host "::error::library was not loaded"
