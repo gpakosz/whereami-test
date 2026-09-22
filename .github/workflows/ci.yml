@@ -75,8 +75,15 @@ jobs:
           # Clang 23 — ubuntu-26.04
           - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true }
           - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x86, pkg: clang-23 gcc-multilib g++-multilib, llvm_repo: true }
+          # Later language standards, on compilers already in the matrix. The
+          # sources target C99 and C++11; these keep them conformant up to C23
+          # and C++23, where bool, static_assert and friends became keywords
+          - { runner: ubuntu-24.04, cc: gcc-14,   cxx: g++-14,     arch: x64, pkg: gcc-14 g++-14, cstd: c11, cxxstd: 'c++14' }
+          - { runner: ubuntu-24.04, cc: gcc-14,   cxx: g++-14,     arch: x64, pkg: gcc-14 g++-14, cstd: c23, cxxstd: 'c++23' }
+          - { runner: ubuntu-24.04, cc: clang-18, cxx: clang++-18, arch: x64, pkg: clang-18, cstd: c17, cxxstd: 'c++17' }
+          - { runner: ubuntu-24.04, cc: clang-18, cxx: clang++-18, arch: x64, pkg: clang-18, cstd: c23, cxxstd: 'c++20' }
 
-    name: Linux | ${{ matrix.cc }} | ${{ matrix.arch }}
+    name: Linux | ${{ matrix.cc }} | ${{ matrix.arch }}${{ matrix.cstd && format(' | {0} / {1}', matrix.cstd, matrix.cxxstd) || '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -98,14 +105,14 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
           ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
@@ -144,8 +151,8 @@ jobs:
 
       - name: Build whereami.c inside a larger translation unit
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; CXXFLAGS="$CXXFLAGS -m32"; fi
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -163,8 +170,8 @@ jobs:
 
       - name: Build with the documented customization macros
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; CXXFLAGS="$CXXFLAGS -m32"; fi
           cat > customized.c <<'EOF'
           #include <stddef.h>
