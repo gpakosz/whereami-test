@@ -718,14 +718,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: macos-15, os: Sequoia,      cc: clang,  cxx: clang++, label: "clang",  arch: arm64 }
-          - { runner: macos-15, os: Sequoia,      cc: clang,  cxx: clang++, label: "clang",  arch: x86 }
-          - { runner: macos-15, os: Sequoia,      cc: gcc-15, cxx: g++-15,  label: "gcc",    arch: arm64, brew: gcc@15 }
-          - { runner: macos-26, os: Tahoe,        cc: clang,  cxx: clang++, label: "clang",  arch: arm64 }
-          - { runner: macos-26, os: Tahoe,        cc: clang,  cxx: clang++, label: "clang",  arch: x86 }
-          - { runner: macos-26, os: Tahoe,        cc: gcc-15, cxx: g++-15,  label: "gcc",    arch: arm64, brew: gcc@15 }
-          - { runner: xcode-27, os: Golden Gate,  cc: clang,  cxx: clang++, label: "clang",  arch: x86 }
-          - { runner: xcode-27, os: Golden Gate,  cc: gcc-15, cxx: g++-15,  label: "gcc-15", arch: arm64, brew: gcc@15 }
+          - { runner: macos-15, os: Sequoia,      cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
+          - { runner: macos-15, os: Sequoia,      cc: clang,  cxx: clang++, label: "clang", arch: x86 }
+          - { runner: macos-15, os: Sequoia,      cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
+          - { runner: macos-26, os: Tahoe,        cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
+          - { runner: macos-26, os: Tahoe,        cc: clang,  cxx: clang++, label: "clang", arch: x86 }
+          - { runner: macos-26, os: Tahoe,        cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
+          - { runner: xcode-27, os: Golden Gate,  cc: clang,  cxx: clang++, label: "clang", arch: arm64 }
+          - { runner: xcode-27, os: Golden Gate,  cc: clang,  cxx: clang++, label: "clang", arch: x86 }
+          - { runner: xcode-27, os: Golden Gate,  cc: gcc-15, cxx: g++-15,  label: "gcc",   arch: arm64, brew: gcc@15 }
 
     name: macOS ${{ matrix.os }} | ${{ matrix.label }} | ${{ matrix.arch }}
     steps:
