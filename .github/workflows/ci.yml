@@ -1457,7 +1457,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Starting the DragonFlyBSD VM
+      - name: Starting the DragonFly BSD VM
         uses: vmactions/dragonflybsd-vm@v1
         with:
           mem: 1024
