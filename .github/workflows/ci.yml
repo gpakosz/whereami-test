@@ -105,14 +105,14 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
           ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
@@ -151,8 +151,8 @@ jobs:
 
       - name: Build whereami.c inside a larger translation unit
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; CXXFLAGS="$CXXFLAGS -m32"; fi
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -170,8 +170,8 @@ jobs:
 
       - name: Build with the documented customization macros
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; CXXFLAGS="$CXXFLAGS -m32"; fi
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -489,13 +489,13 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wno-unused-parameter -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable.exe
           ${{ matrix.cc }} -I src $CFLAGS -shared src/whereami.c example/library.c -o library.dll
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wno-unused-parameter -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp.exe
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared src/whereami.c example/library.c -o library-cpp.dll
 
@@ -538,7 +538,7 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wno-unused-parameter -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe
           ./amalgamation.exe
 
       - name: Build with the documented customization macros
@@ -579,7 +579,7 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wno-unused-parameter -pedantic -Werror -std=c99 customized.c -o customized.exe
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99 customized.c -o customized.exe
           ./customized.exe
 
   # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
@@ -624,13 +624,13 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable.exe -ldl
           ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.dll -ldl
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp.exe -ldl
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.dll -ldl
 
@@ -673,9 +673,9 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe -ldl
           ./amalgamation.exe
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp.exe -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp.exe -ldl
           ./amalgamation-cpp.exe
 
       - name: Build with the documented customization macros
@@ -711,9 +711,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 $defines customized.c -o customized.exe -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized.exe -ldl
           ./customized.exe
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp.exe -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp.exe -ldl
           ./customized-cpp.exe
 
   # ── macOS: Clang + GCC ──────────────────────────────────────────────────────
@@ -748,14 +748,14 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable
           ${{ matrix.cc }} -I src $CFLAGS -shared src/whereami.c example/library.c -o library.dylib
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
           if [ "${{ matrix.label }}" = "gcc" ]; then
             # Apple FB22501039
@@ -800,9 +800,9 @@ jobs:
 
       - name: Build whereami.c inside a larger translation unit
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
           if [ "${{ matrix.label }}" = "gcc" ]; then
             # Apple FB22501039
@@ -824,9 +824,9 @@ jobs:
 
       - name: Build with the documented customization macros
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
           if [ "${{ matrix.label }}" = "gcc" ]; then
             # Apple FB22501039
@@ -892,13 +892,13 @@ jobs:
 
       - name: Build (C)
         run: |
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -arch arm64 src/whereami.c example/executable.c -o executable
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library.dylib
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 src/whereami.c example/executable.c -o executable
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library.dylib
 
       - name: Build (C++)
         run: |
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -arch arm64 src/whereami.c example/executable.c -o executable-cpp
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library-cpp.dylib
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 src/whereami.c example/executable.c -o executable-cpp
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library-cpp.dylib
 
       - name: Build whereami.c inside a larger translation unit
         run: |
@@ -911,8 +911,8 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -arch arm64 amalgamation.c -o amalgamation
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -arch arm64 amalgamation.c -o amalgamation-cpp
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 amalgamation.c -o amalgamation
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 amalgamation.c -o amalgamation-cpp
 
       - name: Build with the documented customization macros
         run: |
@@ -947,8 +947,8 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -arch arm64 $defines customized.c -o customized
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -arch arm64 $defines customized.c -o customized-cpp
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 $defines customized.c -o customized
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 $defines customized.c -o customized-cpp
 
   # ── Android ─────────────────────────────────────────────────────────────────
 
@@ -989,13 +989,13 @@ jobs:
 
       - name: Build (C)
         run: |
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fpie -pie src/whereami.c example/executable.c -o executable -ldl
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie src/whereami.c example/executable.c -o executable -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
 
       - name: Build (C++)
         run: |
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
 
       - name: Build whereami.c inside a larger translation unit
         run: |
@@ -1008,8 +1008,8 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fpie -pie amalgamation.c -o amalgamation -ldl
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fpie -pie amalgamation.c -o amalgamation-cpp -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie amalgamation.c -o amalgamation -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie amalgamation.c -o amalgamation-cpp -ldl
 
       - name: Build with the documented customization macros
         run: |
@@ -1044,8 +1044,8 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fpie -pie $defines customized.c -o customized -ldl
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fpie -pie $defines customized.c -o customized-cpp -ldl
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie $defines customized.c -o customized -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie $defines customized.c -o customized-cpp -ldl
 
   # ── FreeBSD ─────────────────────────────────────────────────────────────────
 
@@ -1080,7 +1080,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
           cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
 
@@ -1089,7 +1089,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
           c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
 
@@ -1145,9 +1145,9 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1186,9 +1186,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 $defines customized.c -o customized
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
           ./customized-cpp
 
   # ── OpenBSD ─────────────────────────────────────────────────────────────────
@@ -1224,7 +1224,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
           cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
 
@@ -1233,7 +1233,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
           c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
 
@@ -1289,9 +1289,9 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1330,9 +1330,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 $defines customized.c -o customized
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
           ./customized-cpp
 
   # ── NetBSD ──────────────────────────────────────────────────────────────────
@@ -1360,7 +1360,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
           cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
 
@@ -1369,7 +1369,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
           c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
 
@@ -1425,9 +1425,9 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1466,9 +1466,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 $defines customized.c -o customized
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
           ./customized-cpp
 
   # ── DragonFly BSD ───────────────────────────────────────────────────────────
@@ -1496,7 +1496,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
           cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
 
@@ -1505,7 +1505,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
           c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
 
@@ -1561,9 +1561,9 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1602,9 +1602,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 $defines customized.c -o customized
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
           ./customized-cpp
 
   # ── Solaris ─────────────────────────────────────────────────────────────────
@@ -1631,7 +1631,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           gcc -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
           gcc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
 
@@ -1640,7 +1640,7 @@ jobs:
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           g++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
           g++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
 
@@ -1698,9 +1698,9 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          gcc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 amalgamation.c -o amalgamation -ldl
+          gcc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation -ldl
           ./amalgamation
-          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp -ldl
+          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp -ldl
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1739,9 +1739,9 @@ jobs:
           }
           EOF
           defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          gcc -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 $defines customized.c -o customized -ldl
+          gcc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized -ldl
           ./customized
-          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp -ldl
+          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp -ldl
           ./customized-cpp
 
   # ── Sanitizers ──────────────────────────────────────────────────────────────
@@ -1765,13 +1765,13 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=all"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=all"
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
           ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=all"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=all"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
 
@@ -1821,13 +1821,13 @@ jobs:
 
       - name: Build (C)
         run: |
-          CFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c99 -fno-omit-frame-pointer -fsanitize=memory -fno-sanitize-recover=all"
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fno-omit-frame-pointer -fsanitize=memory -fno-sanitize-recover=all"
           ${{ matrix.cc }} -I src $CFLAGS src/whereami.c example/executable.c -o executable -ldl
           ${{ matrix.cc }} -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so -ldl
 
       - name: Build (C++)
         run: |
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -pedantic -Werror -std=c++11 -fno-omit-frame-pointer -fsanitize=memory -fno-sanitize-recover=all"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fno-omit-frame-pointer -fsanitize=memory -fno-sanitize-recover=all"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp -ldl
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
 
