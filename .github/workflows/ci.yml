@@ -201,11 +201,11 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
           CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
-          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
           ./customized
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
@@ -863,6 +863,7 @@ jobs:
 
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
@@ -872,7 +873,6 @@ jobs:
             # Apple FB22501039
             CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
           fi
-          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
           if [ "${{ matrix.arch }}" != "x86" ]; then ./customized; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
