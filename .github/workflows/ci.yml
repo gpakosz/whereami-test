@@ -205,10 +205,10 @@ jobs:
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
           CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src $CFLAGS $defines customized.c -o customized
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
           ./customized
-          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $defines customized.c -o customized-cpp
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── Windows: MSVC (VS2022 + VS2026) ─────────────────────────────────────────
@@ -413,6 +413,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           ./amalgamation.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP amalgamation.c /Fe:amalgamation-cpp.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./amalgamation-cpp.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Build with the documented customization macros
         shell: pwsh
@@ -459,6 +463,10 @@ jobs:
           cl.exe /nologo /W4 /WX /wd4100 /O2 /I src customized.c /Fe:customized.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
           ./customized.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP customized.c /Fe:customized-cpp.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./customized-cpp.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
   # ── Windows: MinGW (GCC + Clang via MSYS2) ──────────────────────────────────
@@ -712,10 +720,10 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized.exe -ldl
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized.exe -ldl
           ./customized.exe
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp.exe -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp.exe -ldl
           ./customized-cpp.exe
 
   # ── macOS: Clang + GCC ──────────────────────────────────────────────────────
@@ -864,10 +872,10 @@ jobs:
             # Apple FB22501039
             CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
           fi
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src $CFLAGS $defines customized.c -o customized
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
           if [ "${{ matrix.arch }}" != "x86" ]; then ./customized; fi
-          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $defines customized.c -o customized-cpp
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           if [ "${{ matrix.arch }}" != "x86" ]; then ./customized-cpp; fi
 
   # ── iOS ─────────────────────────────────────────────────────────────────────
@@ -948,9 +956,9 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 $defines customized.c -o customized
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 $defines customized.c -o customized-cpp
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 $customizations customized.c -o customized
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 $customizations customized.c -o customized-cpp
 
   # ── Android ─────────────────────────────────────────────────────────────────
 
@@ -1045,9 +1053,9 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie $defines customized.c -o customized -ldl
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie $defines customized.c -o customized-cpp -ldl
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie $customizations customized.c -o customized -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie $customizations customized.c -o customized-cpp -ldl
 
   # ── FreeBSD ─────────────────────────────────────────────────────────────────
 
@@ -1187,10 +1195,10 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── OpenBSD ─────────────────────────────────────────────────────────────────
@@ -1331,10 +1339,10 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── NetBSD ──────────────────────────────────────────────────────────────────
@@ -1467,10 +1475,10 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── DragonFly BSD ───────────────────────────────────────────────────────────
@@ -1603,10 +1611,10 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp
+          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── Solaris ─────────────────────────────────────────────────────────────────
@@ -1740,10 +1748,10 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          defines='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          gcc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $defines customized.c -o customized -ldl
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          gcc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized -ldl
           ./customized
-          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $defines customized.c -o customized-cpp -ldl
+          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp -ldl
           ./customized-cpp
 
   # ── Sanitizers ──────────────────────────────────────────────────────────────
