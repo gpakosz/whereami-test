@@ -75,13 +75,15 @@ jobs:
           # Clang 23 — ubuntu-26.04
           - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true }
           - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x86, pkg: clang-23 gcc-multilib g++-multilib, llvm_repo: true }
-          # Later language standards, on the newest compilers in the matrix. The
-          # sources target C99 and C++11; these keep them conformant up to C23
-          # and C++23, where bool, static_assert and friends became keywords
+          # C and C++ language standards coverage
           - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x64, pkg: gcc-16 g++-16, cstd: c11, cxxstd: 'c++14' }
+          - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x64, pkg: gcc-16 g++-16, cstd: c17, cxxstd: 'c++17' }
+          - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x64, pkg: gcc-16 g++-16, cstd: c23, cxxstd: 'c++20' }
           - { runner: ubuntu-26.04, cc: gcc-16,   cxx: g++-16,     arch: x64, pkg: gcc-16 g++-16, cstd: c23, cxxstd: 'c++23' }
+          - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true, cstd: c11, cxxstd: 'c++14' }
           - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true, cstd: c17, cxxstd: 'c++17' }
           - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true, cstd: c23, cxxstd: 'c++20' }
+          - { runner: ubuntu-26.04, cc: clang-23, cxx: clang++-23, arch: x64, pkg: clang-23, llvm_repo: true, cstd: c23, cxxstd: 'c++23' }
 
     name: Linux | ${{ matrix.cc }} | ${{ matrix.arch }}${{ matrix.cstd && format(' | {0} / {1}', matrix.cstd, matrix.cxxstd) || '' }}
     steps:
