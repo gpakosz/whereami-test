@@ -1029,15 +1029,11 @@ jobs:
       - name: Wait for the simulator
         run: |
           echo "waiting for simulator $SIM_UDID"
-          # it can spawn a process before it is fully booted; bound the wait so a
-          # stuck boot fails fast with diagnostics instead of hitting the timeout
-          for _ in $(seq 1 300); do
-            xcrun simctl spawn "$SIM_UDID" /usr/bin/true >/dev/null 2>&1 && exit 0
-            sleep 1
-          done
-          echo "::error::simulator $SIM_UDID did not become ready"
-          xcrun simctl list devices
-          exit 1
+          # waits on the real boot-completed signal for as long as the boot needs;
+          # a fixed poll bound lost a ~14 min boot by a few minutes. No -b: the boot
+          # was started in the previous step and -b would re-boot the still-booting
+          # device and error.
+          xcrun simctl bootstatus "$SIM_UDID"
 
       - name: Run and validate (C)
         run: |
