@@ -1126,8 +1126,8 @@ jobs:
 
       - name: Build (C++)
         run: |
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -static-libstdc++ -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -static-libstdc++ -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
 
       - name: Build whereami.c inside a larger translation unit (C)
         run: |
@@ -1144,7 +1144,7 @@ jobs:
 
       - name: Build whereami.c inside a larger translation unit (C++)
         run: |
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie amalgamation.c -o amalgamation-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -static-libstdc++ -fpie -pie amalgamation.c -o amalgamation-cpp -ldl
 
       - name: Build with the documented customization macros (C)
         run: |
@@ -1184,7 +1184,7 @@ jobs:
       - name: Build with the documented customization macros (C++)
         run: |
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie $customizations customized.c -o customized-cpp -ldl
+          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -static-libstdc++ -fpie -pie $customizations customized.c -o customized-cpp -ldl
 
       # only x86_64 boots the emulator with KVM acceleration; the other ABIs
       # stay compile-only, as an arm image on an x86_64 host has no acceleration
