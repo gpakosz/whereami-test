@@ -1200,10 +1200,10 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
             /usr/local/lib/android/sdk/system-images/*
-          # bumped the key because the cached paths changed: actions/cache will
-          # not overwrite an existing key, so the image would never be saved
-          # under the old one
-          key: avd-android-30-x86_64-v2
+          # keyed on ci.yml like the Cygwin cache: actions/cache never overwrites
+          # an existing key, so a new path or emulator setting needs a new key,
+          # or the new snapshot is never saved
+          key: avd-android-30-x86_64-${{ hashFiles('.github/workflows/ci.yml') }}
 
       - name: Create the AVD snapshot
         if: matrix.target == 'x64' && steps.avd-cache.outputs.cache-hit != 'true'
