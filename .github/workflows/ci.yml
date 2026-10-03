@@ -561,12 +561,6 @@ jobs:
           void* my_realloc(void* p, size_t size);
           void my_free(void* p);
 
-          #define WAI_FUNCSPEC static
-          #define WAI_PREFIX(f) my_##f
-          #define WAI_MALLOC(size) my_malloc(size)
-          #define WAI_REALLOC(p, size) my_realloc(p, size)
-          #define WAI_FREE(p) my_free(p)
-
           #include "whereami.c"
 
           #include <stdio.h>
@@ -590,8 +584,9 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
-          ${{ matrix.cc }} -I src $CFLAGS customized.c -o customized.exe
+          ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized.exe
           ./customized.exe
 
   # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
