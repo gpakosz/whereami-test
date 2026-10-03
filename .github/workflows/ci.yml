@@ -1170,6 +1170,66 @@ jobs:
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie $customizations customized.c -o customized-cpp -ldl
 
+      # only x86_64 boots the emulator with KVM acceleration; the other ABIs
+      # stay compile-only, as an arm image on an x86_64 host has no acceleration
+      - name: Enable KVM
+        if: matrix.target == 'x64'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        if: matrix.target == 'x64'
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-android-30-x86_64
+
+      - name: Create the AVD snapshot
+        if: matrix.target == 'x64' && steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated the AVD snapshot."
+
+      - name: Run on the emulator
+        if: matrix.target == 'x64'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb push executable library.so executable-cpp library-cpp.so amalgamation amalgamation-cpp customized customized-cpp /data/local/tmp/
+            adb shell chmod 755 /data/local/tmp/executable /data/local/tmp/executable-cpp /data/local/tmp/amalgamation /data/local/tmp/amalgamation-cpp /data/local/tmp/customized /data/local/tmp/customized-cpp
+            zip -Z store -j app.zip library.so
+            "$(command -v zipalign || printf '%s\n' "$ANDROID_SDK_ROOT"/build-tools/*/zipalign | tail -n1)" -f -p 4 app.zip app.apk
+            adb push app.apk /data/local/tmp/
+            adb shell /data/local/tmp/executable | tr -d '\r' | grep -qE '^executable path: /data/local/tmp/executable$'
+            adb shell /data/local/tmp/executable | tr -d '\r' | grep -qE '^  basename: executable$'
+            adb shell /data/local/tmp/executable | tr -d '\r' | grep -qE '^module path: /data/local/tmp/executable$'
+            adb shell '/data/local/tmp/executable --load-library=/data/local/tmp/library.so' | tr -d '\r' | grep -EA10 '^library loaded$' | grep -qE '^module path: /data/local/tmp/library\.so$'
+            adb shell '/data/local/tmp/executable --load-library=/data/local/tmp/library.so' | tr -d '\r' | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
+            adb shell '/data/local/tmp/executable --load-library=/data/local/tmp/app.apk!/library.so' | tr -d '\r' | grep -EA10 '^library loaded$' | grep -qE '^module path: /data/local/tmp/app\.apk!/library\.so$'
+            adb shell '/data/local/tmp/executable --load-library=/data/local/tmp/app.apk!/library.so' | tr -d '\r' | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
+            adb shell '/data/local/tmp/executable-cpp --load-library=/data/local/tmp/library-cpp.so' | tr -d '\r' | grep -EA10 '^library loaded$' | grep -qE '^module path: /data/local/tmp/library-cpp\.so$'
+            adb shell '/data/local/tmp/amalgamation >/dev/null 2>&1; echo $?' | tr -d '\r' | grep -qx 0
+            adb shell '/data/local/tmp/amalgamation-cpp >/dev/null 2>&1; echo $?' | tr -d '\r' | grep -qx 0
+            adb shell '/data/local/tmp/customized >/dev/null 2>&1; echo $?' | tr -d '\r' | grep -qx 0
+            adb shell '/data/local/tmp/customized-cpp >/dev/null 2>&1; echo $?' | tr -d '\r' | grep -qx 0
+
   # ── FreeBSD ─────────────────────────────────────────────────────────────────
 
   freebsd:
