@@ -549,8 +549,11 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation.exe
           ./amalgamation.exe
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp.exe
+          ./amalgamation-cpp.exe
 
       - name: Build with the documented customization macros
         run: |
@@ -586,8 +589,11 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized.exe
           ./customized.exe
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp.exe
+          ./customized-cpp.exe
 
   # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
 
