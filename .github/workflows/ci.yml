@@ -931,10 +931,10 @@ jobs:
       matrix:
         include:
           # iOS arm64
-          - runner: macos-15
+          - runner: xcode-27
             target: arm64
-            cc: "xcrun --sdk iphoneos clang"
-            cxx: "xcrun --sdk iphoneos clang++"
+            cc: "xcrun --sdk iphonesimulator clang -target arm64-apple-ios15.0-simulator"
+            cxx: "xcrun --sdk iphonesimulator clang++ -target arm64-apple-ios15.0-simulator"
 
     name: iOS — ${{ matrix.target }}
     steps:
@@ -942,6 +942,14 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Boot a simulator
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -oE '\([0-9A-F-]{36}\)' | head -1 | tr -d '()')
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+          # returns immediately; the device boots on its own during the build
+          # steps, and the run phases gate on readiness
+          xcrun simctl boot "$UDID" || true
 
       - name: Build (C)
         run: |
@@ -1009,6 +1017,54 @@ jobs:
         run: |
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 $customizations customized.c -o customized-cpp
+
+      - name: Wait for the simulator
+        run: |
+          # ready to spawn a process, which comes before a full boot
+          until xcrun simctl spawn "$SIM_UDID" /usr/bin/true >/dev/null 2>&1; do sleep 0.2; done
+
+      - name: Run and validate (C)
+        run: |
+          output=$(xcrun simctl spawn "$SIM_UDID" "$PWD/executable")
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable$'
+          echo '───'
+          output=$(xcrun simctl spawn "$SIM_UDID" "$PWD/executable" "--load-library=$PWD/library.dylib")
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.dylib$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.dylib$'
+
+      - name: Run and validate (C++)
+        run: |
+          output=$(xcrun simctl spawn "$SIM_UDID" "$PWD/executable-cpp")
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^module path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -qE '^  basename: executable-cpp$'
+          echo '───'
+          output=$(xcrun simctl spawn "$SIM_UDID" "$PWD/executable-cpp" "--load-library=$PWD/library-cpp.dylib")
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^executable path: .+/executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: executable-cpp$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dylib$'
+          printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dylib$'
+
+      - name: Run the amalgamation and customization builds
+        run: |
+          xcrun simctl spawn "$SIM_UDID" "$PWD/amalgamation"
+          xcrun simctl spawn "$SIM_UDID" "$PWD/amalgamation-cpp"
+          xcrun simctl spawn "$SIM_UDID" "$PWD/customized"
+          xcrun simctl spawn "$SIM_UDID" "$PWD/customized-cpp"
+
+      - name: Shut down the simulator
+        if: always()
+        run: xcrun simctl shutdown "$SIM_UDID" || true
 
   # ── Android ─────────────────────────────────────────────────────────────────
 
