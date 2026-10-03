@@ -548,7 +548,8 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
+          ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation.exe
           ./amalgamation.exe
 
       - name: Build with the documented customization macros
@@ -589,7 +590,8 @@ jobs:
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99 customized.c -o customized.exe
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
+          ${{ matrix.cc }} -I src $CFLAGS customized.c -o customized.exe
           ./customized.exe
 
   # ── Windows: Cygwin (GCC + Clang) ───────────────────────────────────────────
@@ -683,9 +685,11 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation.exe -ldl
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation.exe -ldl
           ./amalgamation.exe
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp.exe -ldl
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp.exe -ldl
           ./amalgamation-cpp.exe
 
       - name: Build with the documented customization macros
@@ -721,9 +725,11 @@ jobs:
           }
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized.exe -ldl
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized.exe -ldl
           ./customized.exe
-          ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp.exe -ldl
+          ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp.exe -ldl
           ./customized-cpp.exe
 
   # ── macOS: Clang + GCC ──────────────────────────────────────────────────────
@@ -1155,9 +1161,11 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1196,9 +1204,11 @@ jobs:
           }
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
+          c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── OpenBSD ─────────────────────────────────────────────────────────────────
@@ -1299,9 +1309,11 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1340,9 +1352,11 @@ jobs:
           }
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
+          c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── NetBSD ──────────────────────────────────────────────────────────────────
@@ -1435,9 +1449,11 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1476,9 +1492,11 @@ jobs:
           }
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
+          c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── DragonFly BSD ───────────────────────────────────────────────────────────
@@ -1571,9 +1589,11 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp
+          c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1612,9 +1632,11 @@ jobs:
           }
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          cc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
-          c++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp
+          c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
   # ── Solaris ─────────────────────────────────────────────────────────────────
@@ -1708,9 +1730,11 @@ jobs:
             return (wai_getExecutablePath(0, 0, 0) < 0) || (wai_getModulePath(0, 0, 0) < 0);
           }
           EOF
-          gcc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 amalgamation.c -o amalgamation -ldl
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          gcc -I src $CFLAGS amalgamation.c -o amalgamation -ldl
           ./amalgamation
-          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 amalgamation.c -o amalgamation-cpp -ldl
+          g++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp -ldl
           ./amalgamation-cpp
 
       - name: Build with the documented customization macros
@@ -1749,9 +1773,11 @@ jobs:
           }
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
-          gcc -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 $customizations customized.c -o customized -ldl
+          CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
+          gcc -I src $CFLAGS $customizations customized.c -o customized -ldl
           ./customized
-          g++ -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 $customizations customized.c -o customized-cpp -ldl
+          g++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp -ldl
           ./customized-cpp
 
   # ── Sanitizers ──────────────────────────────────────────────────────────────
