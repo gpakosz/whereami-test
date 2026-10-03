@@ -149,7 +149,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         run: |
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -162,14 +162,17 @@ jobs:
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
-          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
           ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         run: |
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -204,10 +207,14 @@ jobs:
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cstd || 'c99' }}"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -m32"; fi
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
-          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
           ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
           ./customized
+
+      - name: Build with the documented customization macros (C++)
+        run: |
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=${{ matrix.cxxstd || 'c++11' }}"
+          if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -m32"; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
@@ -397,7 +404,7 @@ jobs:
             exit 1
           }
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         shell: pwsh
         run: |
           @'
@@ -413,12 +420,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           ./amalgamation.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        shell: pwsh
+        run: |
           cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP amalgamation.c /Fe:amalgamation-cpp.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
           ./amalgamation-cpp.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         shell: pwsh
         run: |
           # cl.exe /D cannot define a function-like macro, so the customization
@@ -464,6 +475,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           ./customized.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Build with the documented customization macros (C++)
+        shell: pwsh
+        run: |
           cl.exe /nologo /W4 /WX /wd4100 /O2 /EHsc /std:c++14 /I src /TP customized.c /Fe:customized-cpp.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
           ./customized-cpp.exe
@@ -537,7 +552,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+\\library-cpp\.dll$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dll$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         run: |
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -549,13 +564,16 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation.exe
           ./amalgamation.exe
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp.exe
           ./amalgamation-cpp.exe
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         run: |
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -589,9 +607,13 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized.exe
           ./customized.exe
+
+      - name: Build with the documented customization macros (C++)
+        run: |
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -Wno-unused-parameter -pedantic -Werror -std=c++11"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp.exe
           ./customized-cpp.exe
 
@@ -675,7 +697,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dll$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dll$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         run: |
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -687,13 +709,16 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation.exe -ldl
           ./amalgamation.exe
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        run: |
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp.exe -ldl
           ./amalgamation-cpp.exe
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         run: |
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -727,9 +752,13 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized.exe -ldl
           ./customized.exe
+
+      - name: Build with the documented customization macros (C++)
+        run: |
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp.exe -ldl
           ./customized-cpp.exe
 
@@ -815,7 +844,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.dylib$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.dylib$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         run: |
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -828,18 +857,21 @@ jobs:
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
+          ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation
+          if [ "${{ matrix.arch }}" != "x86" ]; then ./amalgamation; fi
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        run: |
           CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
           if [ "${{ matrix.label }}" = "gcc" ]; then
             # Apple FB22501039
             CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
           fi
-          ${{ matrix.cc }} -I src $CFLAGS amalgamation.c -o amalgamation
-          if [ "${{ matrix.arch }}" != "x86" ]; then ./amalgamation; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           if [ "${{ matrix.arch }}" != "x86" ]; then ./amalgamation-cpp; fi
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         run: |
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -874,14 +906,18 @@ jobs:
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
+          ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
+          if [ "${{ matrix.arch }}" != "x86" ]; then ./customized; fi
+
+      - name: Build with the documented customization macros (C++)
+        run: |
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           if [ "${{ matrix.arch }}" = "x86" ]; then CXXFLAGS="$CXXFLAGS -arch x86_64"; fi
           if [ "${{ matrix.label }}" = "gcc" ]; then
             # Apple FB22501039
             CXXFLAGS="$CXXFLAGS -D_Static_assert(expression,message)="
           fi
-          ${{ matrix.cc }} -I src $CFLAGS $customizations customized.c -o customized
-          if [ "${{ matrix.arch }}" != "x86" ]; then ./customized; fi
           ${{ matrix.cxx }} -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           if [ "${{ matrix.arch }}" != "x86" ]; then ./customized-cpp; fi
 
@@ -917,7 +953,7 @@ jobs:
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 src/whereami.c example/executable.c -o executable-cpp
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 -dynamiclib src/whereami.c example/library.c -o library-cpp.dylib
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         run: |
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -929,9 +965,12 @@ jobs:
           }
           EOF
           ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 amalgamation.c -o amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        run: |
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 amalgamation.c -o amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         run: |
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -965,6 +1004,10 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -arch arm64 $customizations customized.c -o customized
+
+      - name: Build with the documented customization macros (C++)
+        run: |
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -arch arm64 $customizations customized.c -o customized-cpp
 
   # ── Android ─────────────────────────────────────────────────────────────────
@@ -1014,7 +1057,7 @@ jobs:
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie src/whereami.c example/executable.c -o executable-cpp -ldl
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -shared -fPIC src/whereami.c example/library.c -o library-cpp.so -ldl
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         run: |
           cat > amalgamation.c <<'EOF'
           #include "whereami.h"
@@ -1026,9 +1069,12 @@ jobs:
           }
           EOF
           ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie amalgamation.c -o amalgamation -ldl
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        run: |
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie amalgamation.c -o amalgamation-cpp -ldl
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         run: |
           cat > customized.c <<'EOF'
           #include <stddef.h>
@@ -1062,6 +1108,10 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cc }} -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99 -fpie -pie $customizations customized.c -o customized -ldl
+
+      - name: Build with the documented customization macros (C++)
+        run: |
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           ${{ matrix.cxx }} -x c++ -I src -O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11 -fpie -pie $customizations customized.c -o customized-cpp -ldl
 
   # ── FreeBSD ─────────────────────────────────────────────────────────────────
@@ -1148,7 +1198,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         shell: freebsd {0}
         run: |
           set -e
@@ -1163,13 +1213,19 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        shell: freebsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         shell: freebsd {0}
         run: |
           set -e
@@ -1206,9 +1262,16 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
+
+      - name: Build with the documented customization macros (C++)
+        shell: freebsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
@@ -1296,7 +1359,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         shell: openbsd {0}
         run: |
           set -e
@@ -1311,13 +1374,19 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        shell: openbsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         shell: openbsd {0}
         run: |
           set -e
@@ -1354,9 +1423,16 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
+
+      - name: Build with the documented customization macros (C++)
+        shell: openbsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
@@ -1436,7 +1512,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         shell: netbsd {0}
         run: |
           set -e
@@ -1451,13 +1527,19 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        shell: netbsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         shell: netbsd {0}
         run: |
           set -e
@@ -1494,9 +1576,16 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
+
+      - name: Build with the documented customization macros (C++)
+        shell: netbsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
@@ -1576,7 +1665,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         shell: dragonflybsd {0}
         run: |
           set -e
@@ -1591,13 +1680,19 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        shell: dragonflybsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         shell: dragonflybsd {0}
         run: |
           set -e
@@ -1634,9 +1729,16 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
+
+      - name: Build with the documented customization macros (C++)
+        shell: dragonflybsd {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
 
@@ -1717,7 +1819,7 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit
+      - name: Build whereami.c inside a larger translation unit (C)
         shell: solaris {0}
         run: |
           set -e
@@ -1732,13 +1834,19 @@ jobs:
           }
           EOF
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           gcc -I src $CFLAGS amalgamation.c -o amalgamation -ldl
           ./amalgamation
+
+      - name: Build whereami.c inside a larger translation unit (C++)
+        shell: solaris {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           g++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp -ldl
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros
+      - name: Build with the documented customization macros (C)
         shell: solaris {0}
         run: |
           set -e
@@ -1775,9 +1883,16 @@ jobs:
           EOF
           customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
-          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           gcc -I src $CFLAGS $customizations customized.c -o customized -ldl
           ./customized
+
+      - name: Build with the documented customization macros (C++)
+        shell: solaris {0}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
+          CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           g++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp -ldl
           ./customized-cpp
 
