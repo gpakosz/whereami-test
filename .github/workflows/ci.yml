@@ -863,8 +863,8 @@ jobs:
 
             return my_getModulePath(buffer, (int)sizeof(buffer) - 1, &dirname_length) < 0;
           }
-          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           EOF
+          customizations='-DWAI_FUNCSPEC=static -DWAI_PREFIX(f)=my_##f -DWAI_MALLOC(n)=my_malloc(n) -DWAI_REALLOC(p,n)=my_realloc(p,n) -DWAI_FREE(p)=my_free(p)'
           CFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c99"
           if [ "${{ matrix.arch }}" = "x86" ]; then CFLAGS="$CFLAGS -arch x86_64"; fi
           CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
