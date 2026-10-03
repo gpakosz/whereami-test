@@ -945,10 +945,18 @@ jobs:
 
       - name: Boot a simulator
         run: |
-          UDID=$(xcrun simctl list devices available | grep -oE '\([0-9A-F-]{36}\)' | head -1 | tr -d '()')
+          # pick an available iPhone (not just the first device of any kind, which
+          # could be a watch or TV that never becomes spawnable)
+          devices=$(xcrun simctl list devices available)
+          UDID=$(awk -F '[()]' '/iPhone/ { print $2; exit }' <<< "$devices")
+          if [ -z "$UDID" ]; then
+            echo "::error::no available iPhone simulator"
+            printf '%s\n' "$devices"
+            exit 1
+          fi
+          echo "using simulator $UDID"
           echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
-          # returns immediately; the device boots on its own during the build
-          # steps, and the run phases gate on readiness
+          # returns immediately; the device boots on its own during the builds
           xcrun simctl boot "$UDID" || true
 
       - name: Build (C)
@@ -1020,8 +1028,16 @@ jobs:
 
       - name: Wait for the simulator
         run: |
-          # ready to spawn a process, which comes before a full boot
-          until xcrun simctl spawn "$SIM_UDID" /usr/bin/true >/dev/null 2>&1; do sleep 0.2; done
+          echo "waiting for simulator $SIM_UDID"
+          # it can spawn a process before it is fully booted; bound the wait so a
+          # stuck boot fails fast with diagnostics instead of hitting the timeout
+          for _ in $(seq 1 300); do
+            xcrun simctl spawn "$SIM_UDID" /usr/bin/true >/dev/null 2>&1 && exit 0
+            sleep 1
+          done
+          echo "::error::simulator $SIM_UDID did not become ready"
+          xcrun simctl list devices
+          exit 1
 
       - name: Run and validate (C)
         run: |
