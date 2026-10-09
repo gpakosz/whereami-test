@@ -877,7 +877,6 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 #if defined(__OpenBSD__)
 
 #include <sys/param.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 #if OpenBSD >= 202610
@@ -919,6 +918,9 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
   return length;
 }
 #else
+
+#include <sys/stat.h>
+
 static bool WAI_PREFIX(isExecutableFile_)(const char* path)
 {
   struct stat st;
