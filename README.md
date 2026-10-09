@@ -95,7 +95,7 @@ There is an Xcode project located in the `_ios-xcode/` folder.
 If you prefer compiling from command line and deploying to a jailbroken device
 through SSH, use:
 
-    $ make -j -C _gnu-make/ binsubdir=ios CC="$(xcrun --sdk iphoneos --find clang) -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch armv7 -arch armv7s -arch arm64" CXX="$(xcrun --sdk iphoneos --find clang++) -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch armv7 -arch armv7s -arch arm64" postbuild="codesign -s 'iPhone Developer'"
+    $ make -j -C _gnu-make/ binsubdir=ios CC="$(xcrun --sdk iphoneos --find clang) -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch arm64" CXX="$(xcrun --sdk iphoneos --find clang++) -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -arch arm64" postbuild="codesign -s 'iPhone Developer'"
 
 ## Compiling for Android
 
