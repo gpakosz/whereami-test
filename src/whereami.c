@@ -880,12 +880,14 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
 #include <sys/stat.h>
 #include <unistd.h>
 
+#if OpenBSD < 202610
 static bool WAI_PREFIX(isExecutableFile_)(const char* path)
 {
   struct stat st;
 
   return access(path, X_OK) == 0 && stat(path, &st) == 0 && S_ISREG(st.st_mode);
 }
+#endif
 
 WAI_FUNCSPEC
 int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
@@ -908,7 +910,7 @@ int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
 
   if (length <= capacity)
   {
-    memcpy(out, path, length);
+    memcpy(out, path, (size_t)length);
 
     if (dirname_length)
     {
