@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [master, dev]
   workflow_dispatch:
+    inputs:
+      openbsd-snapshot:
+        description: Also run the OpenBSD steps on the latest -current snapshot (amd64)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -1437,7 +1442,8 @@ jobs:
           sync: scp
           copyback: false
 
-      - name: Build (C)
+      - &openbsd-build-c
+        name: Build (C)
         shell: openbsd {0}
         run: |
           set -e
@@ -1446,7 +1452,8 @@ jobs:
           cc -I src $CFLAGS src/whereami.c example/executable.c -o executable
           cc -I src $CFLAGS -shared -fPIC src/whereami.c example/library.c -o library.so
 
-      - name: Build (C++)
+      - &openbsd-build-cxx
+        name: Build (C++)
         shell: openbsd {0}
         run: |
           set -e
@@ -1455,7 +1462,8 @@ jobs:
           c++ -x c++ -I src $CXXFLAGS src/whereami.c example/executable.c -o executable-cpp
           c++ -x c++ -I src $CXXFLAGS -shared -fPIC src/whereami.c example/library.c -o library-cpp.so
 
-      - name: Run and validate (C)
+      - &openbsd-run-c
+        name: Run and validate (C)
         shell: openbsd {0}
         run: |
           set -e
@@ -1474,7 +1482,8 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library\.so$'
 
-      - name: Run and validate (C++)
+      - &openbsd-run-cxx
+        name: Run and validate (C++)
         shell: openbsd {0}
         run: |
           set -e
@@ -1493,7 +1502,8 @@ jobs:
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^module path: .+/library-cpp\.so$'
           printf '%s\n' "$output" | grep -EA10 '^library loaded$' | grep -qE '^  basename: library-cpp\.so$'
 
-      - name: Build whereami.c inside a larger translation unit (C)
+      - &openbsd-amalgamation-c
+        name: Build whereami.c inside a larger translation unit (C)
         shell: openbsd {0}
         run: |
           set -e
@@ -1511,7 +1521,8 @@ jobs:
           cc -I src $CFLAGS amalgamation.c -o amalgamation
           ./amalgamation
 
-      - name: Build whereami.c inside a larger translation unit (C++)
+      - &openbsd-amalgamation-cxx
+        name: Build whereami.c inside a larger translation unit (C++)
         shell: openbsd {0}
         run: |
           set -e
@@ -1520,7 +1531,8 @@ jobs:
           c++ -x c++ -I src $CXXFLAGS amalgamation.c -o amalgamation-cpp
           ./amalgamation-cpp
 
-      - name: Build with the documented customization macros (C)
+      - &openbsd-customized-c
+        name: Build with the documented customization macros (C)
         shell: openbsd {0}
         run: |
           set -e
@@ -1560,7 +1572,8 @@ jobs:
           cc -I src $CFLAGS $customizations customized.c -o customized
           ./customized
 
-      - name: Build with the documented customization macros (C++)
+      - &openbsd-customized-cxx
+        name: Build with the documented customization macros (C++)
         shell: openbsd {0}
         run: |
           set -e
@@ -1569,6 +1582,149 @@ jobs:
           CXXFLAGS="-O2 -Wall -Wshadow -Wextra -Wconversion -pedantic -Werror -std=c++11"
           c++ -x c++ -I src $CXXFLAGS $customizations customized.c -o customized-cpp
           ./customized-cpp
+
+  # ── OpenBSD -current snapshot (bespoke) ─────────────────────────────────────
+
+  # vmactions/openbsd-vm boots releases, 7.9 at most, and the getexecpath()
+  # branch needs OpenBSD >= 202610 (8.0). So this job builds what that action
+  # boots: it netboots the snapshot installer in QEMU, lets autoinstall(8)
+  # install it, boots the result and runs the openbsd job's steps over ssh
+  # through an `openbsd` shell like the action's. Manual dispatch only.
+  openbsd-snapshot:
+    if: github.event_name == 'workflow_dispatch' && inputs.openbsd-snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    name: OpenBSD -current | clang | x64
+    env:
+      MIRROR: https://cdn.openbsd.org/pub/OpenBSD/snapshots/amd64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends qemu-system-x86 qemu-utils ipxe-qemu seabios
+
+      - name: Netboot and autoinstall the snapshot
+        run: |
+          vm="$RUNNER_TEMP/openbsd"
+          mkdir -p "$vm/tftp/etc" "$vm/www" ~/.ssh
+          # netbooting pxeboot under the name auto_install is what makes the
+          # installer unattended; bsd is the fallback if boot.conf isn't read
+          curl -fsSL -o "$vm/tftp/auto_install" "$MIRROR/pxeboot"
+          curl -fsSL -o "$vm/tftp/bsd.rd" "$MIRROR/bsd.rd"
+          cp "$vm/tftp/bsd.rd" "$vm/tftp/bsd"
+          printf 'set tty com0\nboot bsd.rd\n' > "$vm/tftp/etc/boot.conf"
+
+          ssh-keygen -q -t ed25519 -N '' -f ~/.ssh/openbsd
+          cat > ~/.ssh/config <<'EOF'
+          Host openbsd
+            HostName 127.0.0.1
+            Port 2222
+            User root
+            IdentityFile ~/.ssh/openbsd
+            BatchMode yes
+            ConnectTimeout 5
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            LogLevel ERROR
+          EOF
+
+          # QEMU's DHCP gives 10.0.2.2, this runner, as next-server, so the
+          # installer fetches http://10.0.2.2/install.conf from here
+          cat > "$vm/www/install.conf" <<EOF
+          System hostname = openbsd
+          Password for root account = *************
+          Public ssh key for root account = $(cat ~/.ssh/openbsd.pub)
+          Allow root ssh login = prohibit-password
+          Change the default console to com0 = yes
+          Do you expect to run the X Window System = no
+          What timezone are you in = UTC
+          Location of sets = http
+          HTTP Server = cdn.openbsd.org
+          Server directory = pub/OpenBSD/snapshots/amd64
+          Set name(s) = -x* -game* -man*
+          EOF
+          sudo python3 -m http.server 80 --bind 127.0.0.1 --directory "$vm/www" > "$vm/http.log" 2>&1 &
+
+          qemu-img create -q -f qcow2 "$vm/disk.qcow2" 16G
+          # the installer reboots once done, and -no-reboot makes that end QEMU
+          qemu-system-x86_64 -machine q35,accel=kvm -cpu host -smp 2 -m 2048 \
+            -drive file="$vm/disk.qcow2",if=virtio,format=qcow2 \
+            -netdev user,id=n0,tftp="$vm/tftp",bootfile=auto_install \
+            -device virtio-net-pci,netdev=n0 \
+            -boot n -no-reboot -display none -serial file:"$vm/install.log" &
+          qemu=$!
+          for i in $(seq 240); do
+            kill -0 $qemu 2>/dev/null || break
+            sleep 5
+          done
+          # still running after 20 minutes: halted instead of rebooting, or stuck
+          kill $qemu 2>/dev/null || true
+          wait $qemu || true
+          tail -n 30 "$vm/install.log"
+          grep -q 'CONGRATULATIONS' "$vm/install.log"
+
+      - name: Boot the installed snapshot
+        run: |
+          vm="$RUNNER_TEMP/openbsd"
+          qemu-system-x86_64 -machine q35,accel=kvm -cpu host -smp 2 -m 2048 \
+            -drive file="$vm/disk.qcow2",if=virtio,format=qcow2 \
+            -netdev user,id=n0,hostfwd=tcp:127.0.0.1:2222-:22 \
+            -device virtio-net-pci,netdev=n0 \
+            -boot c -display none -serial file:"$vm/boot.log" -daemonize -pidfile "$vm/qemu.pid"
+          # the first boot relinks the kernel before sshd starts
+          for i in $(seq 60); do
+            ssh openbsd true && break
+            sleep 10
+          done
+          ssh openbsd true || { tail -n 30 "$vm/boot.log"; exit 1; }
+          ssh openbsd 'sysctl -n kern.version | head -n 1'
+          # the point of the job: OpenBSD >= 202610 compiles the getexecpath() branch
+          version=$(ssh openbsd "printf '#include <sys/param.h>\nOpenBSD\n' | cc -E -P - | tail -n 1")
+          echo "OpenBSD $version"
+          test "$version" -ge 202610
+
+      - name: Copy the repository into the VM and install the openbsd shell
+        run: |
+          ssh openbsd "mkdir -p '$GITHUB_WORKSPACE'"
+          tar -C "$GITHUB_WORKSPACE" --exclude=.git -cf - . | ssh openbsd "tar -C '$GITHUB_WORKSPACE' -xf -"
+          # `shell: openbsd {0}` runs a step's script in the VM, from the same
+          # directory as on the runner
+          mkdir -p "$RUNNER_TEMP/bin"
+          cat > "$RUNNER_TEMP/bin/openbsd" <<'EOF'
+          #!/bin/sh
+          { printf "GITHUB_WORKSPACE='%s'\n" "$GITHUB_WORKSPACE"; cat "$1"; } | ssh openbsd sh -s
+          EOF
+          chmod +x "$RUNNER_TEMP/bin/openbsd"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - *openbsd-build-c
+      - *openbsd-build-cxx
+      - *openbsd-run-c
+      - *openbsd-run-cxx
+      - *openbsd-amalgamation-c
+      - *openbsd-amalgamation-cxx
+      - *openbsd-customized-c
+      - *openbsd-customized-cxx
+
+      - name: Show the VM console logs
+        if: failure()
+        run: |
+          for log in install boot; do
+            echo "::group::$log.log"
+            cat "$RUNNER_TEMP/openbsd/$log.log" || true
+            echo "::endgroup::"
+          done
 
   # ── NetBSD ──────────────────────────────────────────────────────────────────
 
